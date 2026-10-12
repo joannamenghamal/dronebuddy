@@ -16,4 +16,4 @@ while True:
         break
 
 camera.release()
-cv2.destroyAllWindows
+cv2.destroyAllWindows()
