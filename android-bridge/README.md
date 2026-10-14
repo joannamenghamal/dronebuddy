@@ -101,9 +101,19 @@ exactly which spots those are and why.
    the same network first if that happens.
 6. **Start conservative.** Keep the Mini 3 low and in a wide-open outdoor
    space for the first run — nothing here has been tested against a real
-   aircraft yet. Confirm in order: telemetry arrives (battery, connection
-   state logged), then `takeoff()`, then small `move()` commands, then
-   `land()`, before trying the actual follow-me loop in `app/main.py`.
+   aircraft yet. Run the staged smoke test before trusting the full
+   follow-me loop:
+   ```
+   python3 -m scripts.dji_smoke_test
+   ```
+   It connects, prints telemetry for a few seconds, then asks for a typed
+   `y` before each flight-affecting step (confirming the aircraft is
+   already airborne, then a small `up`/`forward`/`yaw` nudge each, then
+   `land()`) — nothing happens without an explicit confirmation at each
+   stage. Note `app/main.py` itself never calls `takeoff()`: the follow-me
+   loop only ever sends `move()`/`land()`/`emergency_stop()`, so the
+   aircraft needs to already be airborne (manual RC takeoff) before you
+   start it, exactly as the smoke test assumes.
 7. **Know your kill switches.** The RC's own physical controls and DJI's
    firmware-level failsafes (RC signal loss, geofencing, low battery RTH)
    are never bypassed by this bridge and are always the fastest way to
