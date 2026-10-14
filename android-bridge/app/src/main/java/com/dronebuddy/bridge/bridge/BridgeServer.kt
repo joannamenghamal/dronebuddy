@@ -149,6 +149,17 @@ class BridgeServer(
         activeClient?.send(ProtocolCodec.encodeTelemetry(telemetry))
     }
 
+    /**
+     * Video frames go out as raw binary WS frames (JPEG bytes, no JSON
+     * envelope) rather than through ProtocolCodec — DRONE_BRIDGE.md leaves
+     * them a separate channel on the same socket from the JSON control/
+     * telemetry traffic, since base64-wrapping a binary blob into JSON would
+     * cost ~33% more bandwidth for no benefit on a link this latency-sensitive.
+     */
+    fun broadcastVideoFrame(jpegBytes: ByteArray) {
+        activeClient?.send(jpegBytes)
+    }
+
     fun shutdownServer() {
         watchdogTimer.cancel()
         thread { stop() }

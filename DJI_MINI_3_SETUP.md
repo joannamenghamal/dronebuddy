@@ -26,6 +26,7 @@ compiling cleanly against the SDK is not the same as flying a real Mini 3.
 | `VirtualStickFlightControlParam` field names/types (`DjiVirtualStickController.kt`) | Confirmed | `javap` against the same AAR |
 | Telemetry `DJIKey` identifiers used (`DjiTelemetryProvider.kt`) | Confirmed | `javap` against the same AAR |
 | `KeyStartTakeoff`/`KeyStartAutoLanding` exist as `DJIActionKeyInfo<EmptyMsg, EmptyMsg>` on `DJIFlightControllerKey`, and the `create()`/`action()` call shapes used to invoke them (`DjiFlightActions.kt`) | Confirmed | `javap` against the same AAR |
+| `CameraStreamManager.getInstance().addFrameListener(ComponentIndexType, FrameFormat, CameraFrameListener)` exists, and `CameraFrameListener.onFrame(ByteArray, offset, length, width, height, FrameFormat)` is the callback shape; `FrameFormat.RGBA_8888` is a valid enum value (`DjiCameraStreamProvider.kt`) | Confirmed | `javap` against `dji-sdk-v5-aircraft-provided:5.18.0` |
 
 ## UNVERIFIED — can only be resolved with a registered app key and/or physical hardware
 
@@ -35,13 +36,16 @@ compiling cleanly against the SDK is not the same as flying a real Mini 3.
    hardware — some perception-related keys may always report "unsupported"
    on the base Mini 3 even though they compile and resolve fine. Only a live
    aircraft can confirm this.
-2. **Live video stream API shape, format, and latency for Mini 3 via SDK
-   V5.** Not confirmed which codec/resolution the SDK exposes to the app, or
-   what the realistic glass-to-app latency is — relevant to whether the
-   architecture in `DRONE_BRIDGE.md`'s "what's still open" section (WebSocket
-   vs. RTMP/RTSP for video) is even viable at a frame rate useful for
-   follow-me tracking. Not yet implemented at all (`DJIController.get_video_frame()`
-   returns `None`).
+2. **Realistic video frame rate/latency for Mini 3 via SDK V5, and whether
+   `ComponentIndexType.LEFT_OR_MAIN` is the index the aircraft actually
+   reports.** The call shape is confirmed (see above) and both sides are
+   implemented — `DjiCameraStreamProvider.kt` streams JPEG-encoded frames
+   over the bridge WebSocket, `DJIController.get_video_frame()` decodes
+   them — but glass-to-app latency, sustainable frame rate over a real
+   WiFi link between two devices, and whether `LEFT_OR_MAIN` is correct for
+   the base Mini 3 specifically (it's what DJI's own samples bind for
+   single-camera aircraft, not confirmed against this aircraft) all need a
+   physical unit to verify. See `DRONE_BRIDGE.md`'s "Video" section.
 3. **Virtual Stick arming preconditions on Mini 3** — e.g. minimum GPS
    satellite count, whether it degrades gracefully or refuses input entirely
    without GPS lock, and any firmware-enforced speed/attitude caps that could

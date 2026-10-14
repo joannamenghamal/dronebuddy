@@ -13,6 +13,8 @@ import json
 import threading
 import time
 
+import cv2
+import numpy as np
 import pytest
 from websockets.asyncio.server import serve
 
@@ -93,6 +95,11 @@ class FakeBridge:
         with self._lock:
             ws = self._ws
         asyncio.run_coroutine_threadsafe(ws.send(json.dumps(payload)), self._loop).result(timeout=2.0)
+
+    def push_video_frame(self, jpeg_bytes):
+        with self._lock:
+            ws = self._ws
+        asyncio.run_coroutine_threadsafe(ws.send(jpeg_bytes), self._loop).result(timeout=2.0)
 
     def close(self):
         async def _shutdown():
@@ -211,5 +218,32 @@ def test_emergency_stop_does_not_block_waiting_for_an_ack(drone):
     assert time.time() - start < 0.5
 
 
-def test_get_video_frame_returns_none_rather_than_a_fake_frame(drone):
+def test_get_video_frame_returns_none_until_a_frame_arrives(drone):
+    assert drone.get_video_frame() is None
+
+
+def test_get_video_frame_decodes_binary_frame_from_bridge(drone, bridge):
+    source = np.zeros((4, 4, 3), dtype=np.uint8)
+    source[:, :, 1] = 255  # distinguishable from an all-zero decode failure
+    ok, encoded = cv2.imencode(".jpg", source)
+    assert ok
+
+    bridge.push_video_frame(encoded.tobytes())
+
+    _wait_until(lambda: drone.get_video_frame() is not None)
+    frame = drone.get_video_frame()
+    assert frame.shape == (4, 4, 3)
+
+
+def test_get_video_frame_resets_to_none_after_disconnect(bridge):
+    drone = DJIController("127.0.0.1", bridge.port)
+    drone.connect()
+    source = np.zeros((2, 2, 3), dtype=np.uint8)
+    ok, encoded = cv2.imencode(".jpg", source)
+    assert ok
+    bridge.push_video_frame(encoded.tobytes())
+    _wait_until(lambda: drone.get_video_frame() is not None)
+
+    drone.disconnect()
+
     assert drone.get_video_frame() is None

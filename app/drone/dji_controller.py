@@ -5,6 +5,7 @@ import threading
 import time
 from typing import Optional
 
+import cv2
 import numpy as np
 import websockets
 
@@ -31,9 +32,11 @@ class DJIController(DroneController):
     loop via `asyncio.run_coroutine_threadsafe` and are safe to call from the
     main thread.
 
-    Video is not implemented: DRONE_BRIDGE.md leaves the video channel an
-    open question, so get_video_frame() returns None rather than inventing a
-    transport the Android side doesn't speak.
+    Video arrives as raw binary WebSocket frames (JPEG bytes, no JSON
+    envelope) interleaved with the JSON control/telemetry traffic on the same
+    socket — `websockets` hands back `bytes` for a binary frame and `str` for
+    a text frame, so `_receive_loop` branches on that instead of trying
+    `json.loads` on every message. See DRONE_BRIDGE.md.
     """
 
     def __init__(self, host: str, port: int):
@@ -47,6 +50,7 @@ class DJIController(DroneController):
         self._connected = False
         self._telemetry = Telemetry()
         self._pending_acks: dict = {}
+        self._latest_frame: Optional[np.ndarray] = None
 
     def connect(self) -> None:
         if self._thread is not None:
@@ -106,12 +110,23 @@ class DJIController(DroneController):
 
     async def _receive_loop(self, ws) -> None:
         async for raw in ws:
+            if isinstance(raw, bytes):
+                self._handle_video_frame(raw)
+                continue
             try:
                 msg = json.loads(raw)
             except json.JSONDecodeError:
                 logger.warning("malformed JSON from bridge, ignoring")
                 continue
             self._handle_message(msg)
+
+    def _handle_video_frame(self, jpeg_bytes: bytes) -> None:
+        frame = cv2.imdecode(np.frombuffer(jpeg_bytes, dtype=np.uint8), cv2.IMREAD_COLOR)
+        if frame is None:
+            logger.warning("failed to decode video frame from bridge, ignoring")
+            return
+        with self._lock:
+            self._latest_frame = frame
 
     def _handle_message(self, msg: dict) -> None:
         msg_type = msg.get("type")
@@ -196,6 +211,7 @@ class DJIController(DroneController):
         self._main_task = None
         with self._lock:
             self._connected = False
+            self._latest_frame = None
 
     def takeoff(self) -> None:
         ack = self._send_and_await_ack({"type": "takeoff"})
@@ -242,7 +258,8 @@ class DJIController(DroneController):
             return self._telemetry
 
     def get_video_frame(self) -> Optional[np.ndarray]:
-        return None
+        with self._lock:
+            return self._latest_frame
 
     @property
     def is_connected(self) -> bool:

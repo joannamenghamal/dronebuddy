@@ -5,6 +5,7 @@ import android.util.Log
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.dronebuddy.bridge.bridge.BridgeServer
+import com.dronebuddy.bridge.dji.DjiCameraStreamProvider
 import com.dronebuddy.bridge.dji.DjiSdkConnectionManager
 import com.dronebuddy.bridge.dji.DjiTelemetryProvider
 import com.dronebuddy.bridge.dji.DjiVirtualStickController
@@ -27,6 +28,7 @@ class MainActivity : AppCompatActivity() {
     private var bridgeServer: BridgeServer? = null
     private val virtualStick = DjiVirtualStickController()
     private val telemetryProvider = DjiTelemetryProvider()
+    private val cameraStreamProvider = DjiCameraStreamProvider()
     private lateinit var sdkConnectionManager: DjiSdkConnectionManager
     @Volatile private var aircraftConnected = false
 
@@ -76,6 +78,10 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
+        cameraStreamProvider.startListening { jpegBytes ->
+            bridgeServer?.broadcastVideoFrame(jpegBytes)
+        }
+
         startBridgeServer()
     }
 
@@ -89,6 +95,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         telemetryProvider.stopListening()
+        cameraStreamProvider.stopListening()
         bridgeServer?.shutdownServer()
     }
 }

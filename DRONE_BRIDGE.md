@@ -127,6 +127,30 @@ and `land`. `ok: false` carries a `detail` string when Android rejects or
 fails a command (validation failure, or an `IDJIError` from the SDK for
 `takeoff`/`land`).
 
+### Video (Android -> Python)
+
+Raw binary WebSocket frames — JPEG bytes, no JSON envelope — interleaved on
+the same socket as the JSON control/telemetry traffic above. `websockets`
+on the Python side hands back `bytes` for a binary frame and `str` for a
+text frame, so `DJIController._receive_loop` branches on that instead of
+`json.loads`-ing everything.
+
+Android side: `DjiCameraStreamProvider` registers a
+`CameraStreamManager.addFrameListener` callback (MSDK V5's live camera
+feed API, `ComponentIndexType.LEFT_OR_MAIN`, `FrameFormat.RGBA_8888`),
+throttles to one frame per `minIntervalMs` (default 100ms / 10fps — the
+raw feed can push far faster than the follow-me loop consumes frames or
+the link can carry comfortably), JPEG-encodes via `Bitmap.compress`, and
+hands the bytes to `BridgeServer.broadcastVideoFrame`.
+
+Chosen over a separate RTMP/RTSP channel to avoid a second connection
+lifecycle and a second place authentication would eventually need adding —
+see the open item below. **Still unverified**: realistic frame rate/latency
+against a physical Mini 3, and whether `ComponentIndexType.LEFT_OR_MAIN` is
+in fact the index the aircraft reports (it's the index DJI's own samples
+bind for single-camera aircraft, but this environment has no hardware to
+confirm against the base Mini 3 specifically).
+
 ## Required behavior on the Android side
 
 - **Stale-command detection**: if no valid `flight_command` has arrived
@@ -144,12 +168,6 @@ fails a command (validation failure, or an `IDJIError` from the SDK for
 
 ## What's still open
 
-- **Video**: not implemented. `DJIController.get_video_frame()` returns
-  `None` rather than inventing a transport the Android side doesn't speak.
-  Whether video should travel over this same WebSocket (base64/binary
-  frames) or a separate channel (e.g. RTMP/RTSP from the Android app) is
-  still undecided — depends on what frame rate/latency the SDK's camera
-  stream API can sustain when re-encoded and pushed off-device.
 - **Emergency stop semantics**: see the `emergency_stop` section above —
   genuinely unverified without a physical aircraft.
 - **Authentication**: none. If this bridge ever runs on a network where an

@@ -32,10 +32,10 @@ diagram is platform-agnostic: it imports `app.drone.controller` only, never
 End-to-end, one frame at a time:
 
 1. **Video in → person detection.** `drone.get_video_frame()` supplies the
-   frame (on `DJIController`, this currently returns `None` — the DJI video
-   stream isn't wired up yet, see the status table below). YOLO detects
-   objects and draws every bounding box, but only `person` detections drive
-   the drone.
+   frame — on `DJIController`, decoded from JPEG frames the Android bridge
+   pushes over the bridge WebSocket (see `DRONE_BRIDGE.md`'s "Video"
+   section). YOLO detects objects and draws every bounding box, but only
+   `person` detections drive the drone.
 2. **Tracking → desired command.** For each detected person,
    `person_tracker.py` computes `direction` (left/right/center, from
    position in frame) and `distance_status` (too close/too far/good, from
@@ -90,7 +90,7 @@ Implementations today:
 | Class | File | Status |
 |---|---|---|
 | `MockDroneController` | `app/drone/mock_controller.py` | Working — for running the pipeline with `--drone mock`, and for tests |
-| `DJIController` | `app/drone/dji_controller.py` | Implemented — a WebSocket client to the Android bridge app (`android-bridge/`), which holds the DJI Mobile SDK session. `get_video_frame()` returns `None` (DJI video stream not wired up yet). Takeoff is manual (via the RC) — `app/main.py` never calls `takeoff()` itself. See [DRONE_BRIDGE.md](DRONE_BRIDGE.md) and [DJI_MINI_3_SETUP.md](DJI_MINI_3_SETUP.md) |
+| `DJIController` | `app/drone/dji_controller.py` | Implemented — a WebSocket client to the Android bridge app (`android-bridge/`), which holds the DJI Mobile SDK session, including video (JPEG frames over the same socket). Takeoff is manual (via the RC) — `app/main.py` never calls `takeoff()` itself. See [DRONE_BRIDGE.md](DRONE_BRIDGE.md) and [DJI_MINI_3_SETUP.md](DJI_MINI_3_SETUP.md) |
 | `TelloController` | `archive/tello/tello_controller.py` | Archived, not wired into `--drone` — working at the time it was archived; see [archive/tello/README.md](archive/tello/README.md) |
 
 ## What changed vs. the pre-migration behavior
