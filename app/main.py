@@ -1,28 +1,56 @@
+import argparse
+import logging
+
 import cv2
 
-from control.follow_controller import get_drone_action
-from person_detector import PERSON_LABEL, detect_objects, load_model
-from person_tracker import get_direction, get_distance_status
+from app.config import load_config
+from app.control.follow_controller import get_drone_action, get_movement_command
+from app.drone.controller import HOVER, DroneController
+from app.drone.mock_controller import MockDroneController
+from app.logging_setup import configure_logging
+from app.person_detector import PERSON_LABEL, detect_objects, load_model
+from app.person_tracker import get_direction, get_distance_status
+from app.safety.safety_manager import SafetyAction, SafetyManager
+
+logger = logging.getLogger("dronebuddy.main")
 
 WEIGHTS_PATH = "yolo11n.pt"
 WINDOW_NAME = "YOLO Detection"
 
 
-def run():
+def build_drone(platform: str) -> DroneController:
+    if platform == "mock":
+        return MockDroneController()
+    if platform == "dji":
+        from app.drone.dji_controller import DJIController
+
+        config = load_config()
+        return DJIController(config.bridge_host, config.bridge_port)
+    raise ValueError(f"unknown drone platform: {platform!r}")
+
+
+def run(platform: str):
+    config = load_config()
     model = load_model(WEIGHTS_PATH)
-    camera = cv2.VideoCapture(0)
+    safety = SafetyManager(config)
+
+    drone = build_drone(platform)
+    drone.connect()
+    drone.start_video_stream()
 
     try:
-        ## Loop to continuously read frames from the camera and perform YOLO detection
         while True:
+            frame = drone.get_video_frame()
 
-            success, frame = camera.read()  # Read a frame from the camera
-
-            if not success:
-                print("Could not read from camera")
+            if frame is None:
+                logger.warning("no frame available from %s", platform)
                 break
 
-            frame_width = frame.shape[1]  # Get frame dimensions
+            telemetry = drone.get_telemetry()
+            safety.note_telemetry(telemetry)
+
+            frame_width = frame.shape[1]
+            person_visible = False
 
             for label, box in detect_objects(model, frame):
                 draw_box(frame, box, label)
@@ -32,12 +60,21 @@ def run():
                 if label != PERSON_LABEL:
                     continue
 
+                person_visible = True
+
                 direction = get_direction(box, frame_width)
                 distance_status = get_distance_status(box)
                 action = get_drone_action(direction, distance_status)
+                desired_command = get_movement_command(direction, distance_status, config)
 
                 draw_person_status(frame, direction, distance_status, action)
                 log_detection(box, direction, distance_status, action)
+
+            safety.note_person_visible(person_visible)
+
+            command = desired_command if person_visible else HOVER
+            decision = safety.decide(command)
+            apply_safety_decision(drone, safety, decision)
 
             ## Display the frame
             cv2.imshow(WINDOW_NAME, frame)
@@ -47,8 +84,24 @@ def run():
                 break
     finally:
         ## Release camera and close OpenCV windows
-        camera.release()
+        drone.stop_video_stream()
+        drone.disconnect()
         cv2.destroyAllWindows()
+
+
+def apply_safety_decision(drone: DroneController, safety: SafetyManager, decision) -> None:
+    if decision.state.name != "NOMINAL":
+        logger.info("safety state=%s action=%s", decision.state.value, decision.action.value)
+
+    if decision.action == SafetyAction.EXECUTE:
+        drone.move(decision.command)
+        safety.note_command_issued()
+    elif decision.action == SafetyAction.HOVER:
+        drone.move(decision.command)
+    elif decision.action == SafetyAction.LAND:
+        drone.land()
+    elif decision.action == SafetyAction.EMERGENCY_STOP:
+        drone.emergency_stop()
 
 
 def draw_box(frame, box, label):
@@ -94,14 +147,25 @@ def log_detection(box, direction, distance_status, action):
     center_x = (x1 + x2) / 2
     center_y = (y1 + y2) / 2
 
-    ## Print information to Terminal
-    print("PERSON FOUND!")
-    print("Box:", x1, y1, x2, y2)
-    print("Center:", center_x, center_y)
-    print("Direction:", direction)
-    print("Distance Status:", distance_status)
-    print("Drone Action:", action)
+    logger.info(
+        "person detected box=%s center=(%.1f, %.1f) direction=%s distance=%s action=%s",
+        box, center_x, center_y, direction, distance_status, action,
+    )
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="DroneBuddy follow-me")
+    parser.add_argument(
+        "--drone",
+        choices=["mock", "dji"],
+        default=load_config().drone_platform,
+        help="Drone backend to drive (default: $DRONE_PLATFORM or 'mock'). "
+        "Tello support is archived — see archive/tello/README.md.",
+    )
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
-    run()
+    configure_logging()
+    args = parse_args()
+    run(args.drone)
