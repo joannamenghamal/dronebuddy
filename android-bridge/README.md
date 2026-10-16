@@ -35,9 +35,14 @@ exactly which spots those are and why.
 ## Before you can build this
 
 1. **Get a DJI developer account and app key.** Register at
-   [developer.dji.com](https://developer.dji.com), create an app with
-   application ID `com.dronebuddy.bridge` (or change the `namespace` in
-   `app/build.gradle.kts` to match whatever ID you register).
+   [developer.dji.com](https://developer.dji.com) with the application ID
+   that matches `namespace`/`applicationId` in `app/build.gradle.kts`
+   (currently `com.example.visualbuddy`) — or register with a different ID
+   and change `build.gradle.kts` to match. **The two must be identical**: DJI's
+   registration server validates the requesting app's package name against
+   the key's registered package, and a mismatch fails with
+   `register_failure: INVALID_METADATA` at runtime (not at build time), which
+   looks like a bad key even though the key itself is fine.
 2. **Put the key in `local.properties`, not in source.** Copy
    `local.properties.example` to `local.properties` (already gitignored —
    Android Studio also writes your `sdk.dir` into this same file on first

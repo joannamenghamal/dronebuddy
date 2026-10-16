@@ -24,11 +24,14 @@ val djiApiKey: String = run {
 }
 
 android {
-    namespace = "com.dronebuddy.bridge"
+    // Must match the package name the DJI app key was registered against on
+    // developer.dji.com - a mismatch here fails SDK registration at runtime
+    // with INVALID_METADATA, not at build time.
+    namespace = "com.example.visualbuddy"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.dronebuddy.bridge"
+        applicationId = "com.example.visualbuddy"
         // DJI docs (Mobile-SDK-Tutorial-V5) specify minSdk 23/24+; targetSdk 34
         // was the documented value at the revision checked - raise only after
         // confirming the installed dji-sdk-v5-aircraft version supports it.

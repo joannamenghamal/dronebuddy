@@ -63,8 +63,8 @@
           Injected at build time from local.properties (DJI_API_KEY) via
           manifestPlaceholders in build.gradle.kts - never hardcode a real
           key here, it must stay out of git. Requires an app key issued for
-          this exact applicationId (com.dronebuddy.bridge) from
-          developer.dji.com.
+          this exact applicationId (see `namespace`/`applicationId` in
+          build.gradle.kts) from developer.dji.com.
         -->
         <meta-data
             android:name="com.dji.sdk.API_KEY"

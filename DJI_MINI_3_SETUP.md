@@ -60,10 +60,20 @@ compiling cleanly against the SDK is not the same as flying a real Mini 3.
    Needs checking against the specific firmware/region the physical unit will
    run in.
 6. **Whether registration actually succeeds against a real, issued app key.**
-   The registration *call shape* is confirmed (see above); whether DJI's
-   servers actually accept a given app key/package name combination, and what
-   the first-run internet-connectivity requirement looks like in practice,
-   can only be confirmed by registering a real app and running it.
+   The registration *call shape* is confirmed (see above). On a real device,
+   registration failed with `register_failure: ErrorImp{errorType='SDK',
+   errorCode='INVALID_METADATA', ...description='The metadata received from
+   server is invalid, please reconnect to the server and try.'}` —
+   root-caused to the app key being registered on developer.dji.com for a
+   different package name than `android-bridge/app/build.gradle.kts`'s
+   `namespace`/`applicationId` at the time. DJI's server checks the
+   requesting app's package name against the key's registered package, and a
+   mismatch surfaces as this generic metadata error rather than a clear
+   "wrong package name" message. Fixed by making `build.gradle.kts`'s
+   `namespace`/`applicationId` match the registered key exactly. Still
+   open: whether a real key otherwise registers cleanly end-to-end (internet
+   connectivity requirement, first-run latency) once the package names agree
+   — only confirmable by running it again against the matched key.
 7. **ProGuard/R8 keep rules for release builds.** Written as best-effort for
    5.18.0 but never exercised through an actual release build — only a real
    build run (or an obfuscation-related crash) can confirm they're sufficient.
@@ -74,9 +84,13 @@ compiling cleanly against the SDK is not the same as flying a real Mini 3.
 
 ## What's left before flying this for real
 
-- Register a real DJI developer app key for `com.dronebuddy.bridge` (or
-  whatever package name is used) and drop it into `AndroidManifest.xml` in
-  place of the `REPLACE_WITH_DJI_APP_KEY` placeholder.
+- Register a real DJI developer app key for the exact package name in
+  `namespace`/`applicationId` (`android-bridge/app/build.gradle.kts`,
+  currently `com.example.visualbuddy`) and put it in
+  `android-bridge/local.properties` as `DJI_API_KEY=...`. The two must match
+  exactly — a mismatch registers fine but fails at runtime with
+  `register_failure: INVALID_METADATA` (see item 6 below, confirmed on a
+  real device during this project).
 - Copy the real `accessory_filter.xml` from DJI's sample project.
 - Build and install on the teammate's Android device, connect it to the RC,
   and confirm items 1-5 above against that specific physical Mini 3 and its

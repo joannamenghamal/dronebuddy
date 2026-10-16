@@ -10,6 +10,7 @@ import com.dronebuddy.bridge.dji.DjiSdkConnectionManager
 import com.dronebuddy.bridge.dji.DjiTelemetryProvider
 import com.dronebuddy.bridge.dji.DjiVirtualStickController
 import com.dronebuddy.bridge.protocol.BridgeMessage
+import com.example.visualbuddy.R
 
 class MainActivity : AppCompatActivity() {
 
