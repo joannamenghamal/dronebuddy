@@ -2,6 +2,26 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!--
+      READ/WRITE_EXTERNAL_STORAGE are listed in DJI's own MSDK V5 tutorial
+      as of the revision checked in this session (see DJI_MINI_3_SETUP.md).
+      On modern targetSdk levels these are largely superseded by scoped
+      storage - keep only if the specific SDK calls this app ends up using
+      actually require them; UNVERIFIED whether 5.18.0 still does.
+    -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+
+    <uses-feature android:name="android.hardware.usb.host" android:required="false" />
+    <uses-feature android:name="android.hardware.usb.accessory" android:required="true" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -20,6 +40,30 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!--
+              The Mini 3's RC connects to this phone/tablet over USB. Launching
+              on accessory-attach is the standard DJI sample pattern - confirm
+              this still matches the 5.18.0 sample before relying on it.
+            -->
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED"
+                android:resource="@xml/accessory_filter" />
+
+            <!--
+              Injected at build time from local.properties (DJI_API_KEY) via
+              manifestPlaceholders in build.gradle.kts - never hardcode a real
+              key here, it must stay out of git. Requires an app key issued for
+              this exact applicationId (see `namespace`/`applicationId` in
+              build.gradle.kts) from developer.dji.com.
+            -->
+            <meta-data
+                android:name="com.dji.sdk.API_KEY"
+                android:value="${DJI_APP_API_KEY}" />
+
         </activity>
     </application>
 
