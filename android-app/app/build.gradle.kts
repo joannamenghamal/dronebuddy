@@ -53,7 +53,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.visualbuddymodern"
+        applicationId = "com.example.dronebuddyapp"
         minSdk = 24
         // targetSdk = 37
         targetSdk = 34
@@ -84,6 +84,7 @@ dependencies {
     // Coordinates and Maven Central hosting verified against
     // search.maven.org / central.sonatype.com for 5.18.0 in this session.
     implementation("com.dji:dji-sdk-v5-aircraft:5.18.0")
+    implementation(libs.androidx.gridlayout)
     compileOnly("com.dji:dji-sdk-v5-aircraft-provided:5.18.0")
     runtimeOnly("com.dji:dji-sdk-v5-networkImp:5.18.0")
 

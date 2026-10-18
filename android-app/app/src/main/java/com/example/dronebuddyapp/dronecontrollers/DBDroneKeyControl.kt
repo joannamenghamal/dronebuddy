@@ -1,9 +1,7 @@
 package dji.sampleV5.aircraft.visualbuddy
 
-import com.google.android.gms.common.internal.service.Common
 import dji.sdk.keyvalue.key.DJIKey
 import dji.sdk.keyvalue.key.DJIKeyInfo
-import dji.sdk.keyvalue.key.FlightControllerKey
 import dji.sdk.keyvalue.key.KeyTools
 import dji.sdk.keyvalue.value.common.LocationCoordinate3D
 import dji.sdk.keyvalue.value.common.Velocity3D
@@ -13,12 +11,12 @@ import dji.v5.manager.interfaces.IKeyManager
 
 // The keys are necessary to control and view hardware details / settings
 // The most important key application will be the access to flight stats, like speed, height, etc.
-class VBDroneKeyControl {
+class DBDroneKeyControl {
     private val keyManager : IKeyManager = KeyManager.getInstance()
     // val sampleKey = keyManager.getValue(KeyTools.createKey(FlightControllerKey.KeyAltitude))
 
     // Create Key ListenerskeyManager.getValue(KeyTools.createKey(FlightControllerKey.KeyAircraftLocation3D))
-    // This function spawns a keylistener, attaches it to this VBDroneKeyControl Class
+    // This function spawns a keylistener, attaches it to this DBDroneKeyControl Class
     // Needs the desired DJIKeyInfo and Callback so that people can attach custom behavior to the callback
     // Example of DJIKeyInfo is FlightControllerKey.KeyConnection
     // Return a DJIKey<T>

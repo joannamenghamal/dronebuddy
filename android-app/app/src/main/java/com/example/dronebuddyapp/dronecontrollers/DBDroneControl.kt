@@ -5,16 +5,15 @@ import dji.v5.common.error.IDJIError
 import dji.v5.manager.aircraft.virtualstick.IStick
 import dji.v5.manager.interfaces.IVirtualStickManager
 import dji.v5.manager.aircraft.virtualstick.VirtualStickManager
-import dji.v5.ux.core.util.ToastUtils
 
 // Class will create all important aspects we need for virtual drone control
 // Use the VirtualStickManager for virtual sticks
 // Convention is NED (North - East - Down)
 // Essentially have to use the virtualstickmanager and get the instance.
-class VBDroneControl() {
+class DBDroneControl() {
     private val stickManager : IVirtualStickManager = VirtualStickManager.getInstance()
-    val leftStick = VBStickCreate(stickManager, true)
-    val rightStick = VBStickCreate(stickManager, false)
+    val leftStick = DBStickCreate(stickManager, true)
+    val rightStick = DBStickCreate(stickManager, false)
     var enableVirtualMode: Boolean = false
         // Kotlin custom setter
         set(bool) {
@@ -30,11 +29,11 @@ class VBDroneControl() {
         if (bool) {
             stickManager.enableVirtualStick(object : CommonCallbacks.CompletionCallback {
                 override fun onSuccess() {
-                    ToastUtils.showToast("enableVirtualStick success.")
+                    // ToastUtils.showToast("enableVirtualStick success.")
                 }
 
                 override fun onFailure(error: IDJIError) {
-                    ToastUtils.showToast("enableVirtualStick error,$error")
+                    // ToastUtils.showToast("enableVirtualStick error,$error")
                     failed = true
                 }
             })
@@ -42,11 +41,11 @@ class VBDroneControl() {
         else {
             stickManager.disableVirtualStick(object : CommonCallbacks.CompletionCallback {
                 override fun onSuccess() {
-                    ToastUtils.showToast("disableVirtualStick success.")
+                    // ToastUtils.showToast("disableVirtualStick success.")
                 }
 
                 override fun onFailure(error: IDJIError) {
-                    ToastUtils.showToast("disableVirtualStick error,$error")
+                    // ToastUtils.showToast("disableVirtualStick error,$error")
                     failed = true
                 }
             })
@@ -58,7 +57,7 @@ class VBDroneControl() {
 }
 
 // Used for handling the stick creating instance
-class VBStickCreate(val stickManager: IVirtualStickManager, val leftOnTrue: Boolean) {
+class DBStickCreate(val stickManager: IVirtualStickManager, val leftOnTrue: Boolean) {
     val virtualStick: IStick
     init {
         if (leftOnTrue) {
