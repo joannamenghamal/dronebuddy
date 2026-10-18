@@ -1,0 +1,100 @@
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="8dp">
+
+    <!-- DJI App Connection Status -->
+    <LinearLayout
+        android:id="@+id/layout_dji_app_connection_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/home_layout_borders"
+            android:orientation="vertical"
+            android:padding="10dp">
+
+            <TextView
+                android:id="@+id/textview21312"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="DJI App Connection Status" />
+
+            <Button
+                android:id="@+id/btn_connect_app_retry"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Retry Connect" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/home_layout_borders"
+            android:orientation="vertical"
+            android:padding="10dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Box2" />
+
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Drone Connection Status -->
+    <LinearLayout
+        android:id="@+id/layout_drone_connection_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/home_layout_borders"
+            android:orientation="vertical"
+            android:padding="10dp">
+
+            <TextView
+                android:id="@+id/textview2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Drone Connection Status" />
+
+            <Button
+                android:id="@+id/btn_connect_drone_retry"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Retry Connect" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/home_layout_borders"
+            android:orientation="vertical"
+            android:padding="10dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Box2" />
+
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>
