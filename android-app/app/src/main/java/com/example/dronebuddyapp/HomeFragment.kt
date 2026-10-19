@@ -5,6 +5,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -56,4 +57,31 @@ class HomeFragment : Fragment() {
                 }
             }
     }
+
+    // Define button functionality below for this page
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        // Define buttons
+        val btnRetryAppConnection = view.findViewById<Button>(R.id.btn_connect_app_retry)
+        val btnRetryDroneConnection = view.findViewById<Button>(R.id.btn_connect_drone_retry)
+
+
+    }
+
+
+    private fun retryAppConnection(btn: Button) {
+        btn.setOnClickListener {
+
+        }
+
+    }
+
+    private fun retryDroneConnection(btn: Button) {
+        btn.setOnClickListener {
+
+        }
+    }
+
+
 }

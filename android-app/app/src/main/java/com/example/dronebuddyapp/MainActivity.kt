@@ -26,8 +26,12 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
+        // Initialize the drone manager
+        val droneManager = DroneManager(applicationContext)
+
         // Get fragmentContainerView
         val mainFragmentContainerView = findViewById<FragmentContainerView>(R.id.mainFragmentContainerView)
+        showFragmentOnMain(HomeFragment(), "Home")
 
         // Add button functionality
         val menuButton = findViewById<ImageButton>(R.id.btnMenu)

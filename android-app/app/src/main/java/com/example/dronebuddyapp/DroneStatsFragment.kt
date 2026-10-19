@@ -37,6 +37,13 @@ class DroneStatsFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_drone_stats, container, false)
     }
 
+    // Define button functionality below for this page
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+
+    }
+
     companion object {
         /**
          * Use this factory method to create a new instance of

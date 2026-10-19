@@ -10,7 +10,7 @@ import dji.v5.manager.aircraft.virtualstick.VirtualStickManager
 // Use the VirtualStickManager for virtual sticks
 // Convention is NED (North - East - Down)
 // Essentially have to use the virtualstickmanager and get the instance.
-class DBDroneControl() {
+class DBDroneFlightControl() {
     private val stickManager : IVirtualStickManager = VirtualStickManager.getInstance()
     val leftStick = DBStickCreate(stickManager, true)
     val rightStick = DBStickCreate(stickManager, false)
