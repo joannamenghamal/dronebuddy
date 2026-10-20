@@ -1,7 +1,6 @@
-package com.example.dronebuddyapp
+package com.example.dronebuddyapp.dronecontrollers
 
 import android.content.Context
-import com.example.dronebuddyapp.dronecontrollers.DBDroneConnectionControl
 import dji.sampleV5.aircraft.visualbuddy.DBDroneFlightControl
 import dji.sampleV5.aircraft.visualbuddy.DBDroneKeyControl
 

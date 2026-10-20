@@ -5,6 +5,7 @@ import android.widget.Button
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
@@ -12,9 +13,11 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentContainerView
-import kotlin.text.replace
+import com.example.dronebuddyapp.dronecontrollers.DroneManager
+import com.example.dronebuddyapp.dronecontrollers.DroneManagerViewModel
 
 class MainActivity : AppCompatActivity() {
+    private val droneManagerViewModel : DroneManagerViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -25,6 +28,8 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+
 
         // Initialize the drone manager
         val droneManager = DroneManager(applicationContext)

@@ -77,6 +77,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
 }
 
 dependencies {
@@ -88,6 +89,8 @@ dependencies {
     compileOnly("com.dji:dji-sdk-v5-aircraft-provided:5.18.0")
     runtimeOnly("com.dji:dji-sdk-v5-networkImp:5.18.0")
 
+    implementation(libs.androidx.fragment.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.constraintlayout)
