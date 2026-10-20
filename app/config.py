@@ -15,6 +15,7 @@ class Config:
     drone_platform: str = os.environ.get("DRONE_PLATFORM", "mock")
     bridge_host: str = os.environ.get("BRIDGE_HOST", "127.0.0.1")
     bridge_port: int = _int_env("BRIDGE_PORT", 8765)
+    camera_index: int = _int_env("CAMERA_INDEX", 0)
 
     # Fractions of each platform's own max speed (see MovementCommand) —
     # kept low by default because this drives an autonomous system.

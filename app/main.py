@@ -11,6 +11,7 @@ from app.logging_setup import configure_logging
 from app.person_detector import PERSON_LABEL, detect_objects, load_model
 from app.person_tracker import get_direction, get_distance_status
 from app.safety.safety_manager import SafetyAction, SafetyManager
+from app.webcam_source import WebcamSource
 
 logger = logging.getLogger("dronebuddy.main")
 
@@ -19,12 +20,13 @@ WINDOW_NAME = "YOLO Detection"
 
 
 def build_drone(platform: str) -> DroneController:
+    config = load_config()
     if platform == "mock":
-        return MockDroneController()
+        ## Pretend drone uses the laptop camera
+        return MockDroneController(camera=WebcamSource(config.camera_index))
     if platform == "dji":
         from app.drone.dji_controller import DJIController
 
-        config = load_config()
         return DJIController(config.bridge_host, config.bridge_port)
     raise ValueError(f"unknown drone platform: {platform!r}")
 
