@@ -6,6 +6,7 @@ import dji.v5.manager.interfaces.ISDKManager
 import dji.v5.common.error.IDJIError
 import dji.v5.common.register.DJISDKInitEvent
 import dji.v5.manager.interfaces.SDKManagerCallback
+import android.util.Log
 
 class DBDroneConnectionControl(private val context: Context) {
     private val sdkManager = SDKManager.getInstance()
@@ -13,6 +14,7 @@ class DBDroneConnectionControl(private val context: Context) {
         override fun onInitProcess(event: DJISDKInitEvent?, totalProcess: Int) {
 
             if (event == DJISDKInitEvent.INITIALIZE_COMPLETE) {
+                Log.d("DJI Connection", "DJI initialization complete")
                 sdkManager.registerApp()
             }
 

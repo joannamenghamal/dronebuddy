@@ -64,6 +64,10 @@ android {
 
         // Manifest Stuff
         manifestPlaceholders["DJI_APP_API_KEY"] = getLocalProperty("DJI_APP_API_KEY")
+        ndk {
+            abiFilters += "arm64-v8a"
+        }
+
     }
 
     buildTypes {

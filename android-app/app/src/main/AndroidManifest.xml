@@ -22,7 +22,9 @@
     <uses-feature android:name="android.hardware.usb.host" android:required="false" />
     <uses-feature android:name="android.hardware.usb.accessory" android:required="true" />
 
+    <!-- Without this androd.name below, it wont initialize the dji class -->
     <application
+        android:name=".DroneBuddyApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -53,18 +55,19 @@
                 android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED"
                 android:resource="@xml/accessory_filter" />
 
-            <!--
+
+    </activity>
+        <!--
               Injected at build time from local.properties (DJI_API_KEY) via
               manifestPlaceholders in build.gradle.kts - never hardcode a real
               key here, it must stay out of git. Requires an app key issued for
               this exact applicationId (see `namespace`/`applicationId` in
               build.gradle.kts) from developer.dji.com.
             -->
-            <meta-data
-                android:name="com.dji.sdk.API_KEY"
-                android:value="${DJI_APP_API_KEY}" />
-
-        </activity>
-    </application>
+        <meta-data
+            android:name="com.dji.sdk.API_KEY"
+            android:value="${DJI_APP_API_KEY}" />
+</application>
 
 </manifest>
+

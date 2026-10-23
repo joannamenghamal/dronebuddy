@@ -18,6 +18,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.MutableCreationExtras
 import com.example.dronebuddyapp.dronecontrollers.DroneManager
 import com.example.dronebuddyapp.dronecontrollers.DroneManagerViewModel
+import dji.v5.manager.SDKManager
 
 class MainActivity : AppCompatActivity() {
     private lateinit var droneManagerViewModel : DroneManagerViewModel
@@ -33,16 +34,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         // https://developer.android.com/topic/libraries/architecture/viewmodel/viewmodel-factories?
-        Log.d("Creating VM","App Context: " + applicationContext.toString())
         val extras = MutableCreationExtras().apply {
             set(DroneManagerViewModel.appContextKey, applicationContext)
         }
-
-        droneManagerViewModel = ViewModelProvider.create(
-            this,
-            factory = DroneManagerViewModel.Factory,
-            extras = extras
-        )[DroneManagerViewModel::class.java]
 
         // Initialize the drone manager
         // val droneManager = DroneManager(applicationContext)
@@ -51,6 +45,7 @@ class MainActivity : AppCompatActivity() {
             factory = DroneManagerViewModel.Factory,
             extras = extras
         )[DroneManagerViewModel::class.java]
+
         // Get fragmentContainerView
         val mainFragmentContainerView = findViewById<FragmentContainerView>(R.id.mainFragmentContainerView)
         showFragmentOnMain(HomeFragment(), "Home")
