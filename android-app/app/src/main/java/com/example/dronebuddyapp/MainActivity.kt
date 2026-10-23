@@ -1,6 +1,7 @@
 package com.example.dronebuddyapp
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.TextView
@@ -13,11 +14,13 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentContainerView
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.MutableCreationExtras
 import com.example.dronebuddyapp.dronecontrollers.DroneManager
 import com.example.dronebuddyapp.dronecontrollers.DroneManagerViewModel
 
 class MainActivity : AppCompatActivity() {
-    private val droneManagerViewModel : DroneManagerViewModel by viewModels()
+    private lateinit var droneManagerViewModel : DroneManagerViewModel
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -29,11 +32,25 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
+        // https://developer.android.com/topic/libraries/architecture/viewmodel/viewmodel-factories?
+        Log.d("Creating VM","App Context: " + applicationContext.toString())
+        val extras = MutableCreationExtras().apply {
+            set(DroneManagerViewModel.appContextKey, applicationContext)
+        }
 
+        droneManagerViewModel = ViewModelProvider.create(
+            this,
+            factory = DroneManagerViewModel.Factory,
+            extras = extras
+        )[DroneManagerViewModel::class.java]
 
         // Initialize the drone manager
-        val droneManager = DroneManager(applicationContext)
-
+        // val droneManager = DroneManager(applicationContext)
+        droneManagerViewModel = ViewModelProvider.create(
+            this,
+            factory = DroneManagerViewModel.Factory,
+            extras = extras
+        )[DroneManagerViewModel::class.java]
         // Get fragmentContainerView
         val mainFragmentContainerView = findViewById<FragmentContainerView>(R.id.mainFragmentContainerView)
         showFragmentOnMain(HomeFragment(), "Home")
