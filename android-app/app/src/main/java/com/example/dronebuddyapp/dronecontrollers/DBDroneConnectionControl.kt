@@ -7,6 +7,7 @@ import dji.v5.common.error.IDJIError
 import dji.v5.common.register.DJISDKInitEvent
 import dji.v5.manager.interfaces.SDKManagerCallback
 import android.util.Log
+import com.example.dronebuddyapp.logcontent.LogItem
 
 class DBDroneConnectionControl(private val context: Context) {
     private val sdkManager = SDKManager.getInstance()
@@ -14,15 +15,16 @@ class DBDroneConnectionControl(private val context: Context) {
         override fun onInitProcess(event: DJISDKInitEvent?, totalProcess: Int) {
 
             if (event == DJISDKInitEvent.INITIALIZE_COMPLETE) {
-                Log.d("DJI Connection", "DJI initialization complete")
+                // Log.d("DJI Connection", "DJI initialization complete")
+                LogItem.addLog("DJI Connection", "DJI Initialization Complete")
                 sdkManager.registerApp()
             }
 
         }
 
         override fun onRegisterSuccess() {
-            TODO("Not yet implemented")
-
+            // Log.d("DJI Connection", "Register Success!")
+            LogItem.addLog("DJI Connection", "Register Success")
         }
 
         override fun onRegisterFailure(error: IDJIError?) {

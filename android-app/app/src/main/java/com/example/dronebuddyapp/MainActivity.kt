@@ -69,9 +69,11 @@ class MainActivity : AppCompatActivity() {
         val btnHome = findViewById<Button>(R.id.btnHome)
         val btnCameraView = findViewById<Button>(R.id.btnCameraView)
         val btnDroneStats = findViewById<Button>(R.id.btnDroneStats)
+        val btnLog = findViewById<Button>(R.id.btnLog)
         btnSetFragment(btnHome, HomeFragment(), "Home")
         btnSetFragment(btnCameraView, CameraViewFragment(), "Camera View")
         btnSetFragment(btnDroneStats, DroneStatsFragment(), "Drone Stats")
+        btnSetFragment(btnLog, LogFragment(), "System Logs")
     }
 
     private fun showFragmentOnMain(fragment: Fragment, title: String) {

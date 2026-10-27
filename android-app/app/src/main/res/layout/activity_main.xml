@@ -121,6 +121,17 @@
             android:textAllCaps="false"
             android:textColor="#333333" />
 
+        <Button
+            android:id="@+id/btnLog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:backgroundTint="#E3F2FD"
+            android:gravity="start|center_vertical"
+            android:text="Logs"
+            android:textAllCaps="false"
+            android:textColor="#1565C0" />
+
     </LinearLayout>
 
 </androidx.drawerlayout.widget.DrawerLayout>

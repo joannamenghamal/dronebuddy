@@ -81,6 +81,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    buildFeatures {
+        viewBinding = true
+    }
 
 }
 
@@ -90,6 +93,8 @@ dependencies {
     // search.maven.org / central.sonatype.com for 5.18.0 in this session.
     implementation("com.dji:dji-sdk-v5-aircraft:5.18.0")
     implementation(libs.androidx.gridlayout)
+    implementation(libs.androidx.legacy.support.v4)
+    implementation(libs.androidx.recyclerview)
     compileOnly("com.dji:dji-sdk-v5-aircraft-provided:5.18.0")
     runtimeOnly("com.dji:dji-sdk-v5-networkImp:5.18.0")
 
