@@ -16,7 +16,7 @@ class DBDroneConnectionControl(private val context: Context) {
 
             if (event == DJISDKInitEvent.INITIALIZE_COMPLETE) {
                 // Log.d("DJI Connection", "DJI initialization complete")
-                LogItem.addLog("DJI Connection", "DJI Initialization Complete")
+                LogItem.addLog("DJI Connection", "DJI Initialization Complete", LogItem.Status.ERROR)
                 sdkManager.registerApp()
             }
 
@@ -24,11 +24,12 @@ class DBDroneConnectionControl(private val context: Context) {
 
         override fun onRegisterSuccess() {
             // Log.d("DJI Connection", "Register Success!")
-            LogItem.addLog("DJI Connection", "Register Success")
+            LogItem.addLog("DJI Connection", "Register Success", LogItem.Status.WARNING)
         }
 
         override fun onRegisterFailure(error: IDJIError?) {
             TODO("Not yet implemented")
+            LogItem.addLog("DJI Connection", "Register Failed", LogItem.Status.ERROR)
         }
 
         override fun onProductConnect(productId: Int) {

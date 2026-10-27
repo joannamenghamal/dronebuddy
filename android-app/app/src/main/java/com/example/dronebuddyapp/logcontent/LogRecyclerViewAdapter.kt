@@ -30,7 +30,9 @@ class LogRecyclerViewAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = values[position]
         holder.idView.text = "${item.formattedTime} - [${item.tag}]"
+        holder.idView.setTextColor(item.status.color)
         holder.contentView.text = item.content
+        holder.contentView.setTextColor(item.status.color)
     }
 
     override fun getItemCount(): Int = values.size

@@ -1,6 +1,8 @@
 package com.example.dronebuddyapp.logcontent
 
+import android.graphics.Color
 import android.util.Log
+import androidx.core.graphics.toColorInt
 import java.text.SimpleDateFormat
 import java.util.ArrayList
 import java.util.Date
@@ -14,6 +16,14 @@ import java.util.Locale
  * TODO: Replace all uses of this class before publishing your app.
  */
 object LogItem {
+
+    enum class Status (val status : String, val color: Int) {
+        INFO("INFO", Color.BLACK),
+
+        // Mustard Warning Color
+        WARNING("WARNING", "#FFBA00".toColorInt()),
+        ERROR("ERROR", Color.RED),
+    }
 
     /**
      * An array of sample (placeholder) items.
@@ -30,13 +40,13 @@ object LogItem {
     // Definitely need to remove this
     init {
         // Add some sample items.
-        addItem(LogItem("Tag1", "Hello this is a test"))
+        addItem(LogItem("Tag1", "Hello this is a test", Status.INFO))
 
     }
 
     // This is how people will add to our log
-    fun addLog(tag: String, content: String) {
-        val createdLogItem = LogItem(tag, content)
+    fun addLog(tag: String, content: String, status: LogItem.Status) {
+        val createdLogItem = LogItem(tag, content, status)
 
         addItem(createdLogItem)
         Log.d(tag, content)
@@ -50,7 +60,7 @@ object LogItem {
     /**
      * A placeholder item representing a piece of content.
      */
-    data class LogItem(val tag: String, val content: String) {
+    data class LogItem(val tag: String, val content: String, val status: Status) {
 
         // Get the current local time
         val formattedTime = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
