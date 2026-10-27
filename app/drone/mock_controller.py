@@ -12,13 +12,15 @@ logger = logging.getLogger("dronebuddy.drone.mock")
 class MockDroneController(DroneController):
     """Simulated drone for running YOLO -> tracking -> follow-controller ->
     flight-command end to end without hardware. Records every command it
-    receives so tests can assert on what the autonomy layer decided to do."""
+    receives so tests can assert on what the autonomy layer decided to do.
+    Uses `camera` for frames if given, otherwise blank frames."""
 
-    def __init__(self, initial_battery: int = 100, frame_shape=(480, 640, 3)):
+    def __init__(self, initial_battery: int = 100, frame_shape=(480, 640, 3), camera=None):
         self._connected = False
         self._airborne = False
         self._battery = initial_battery
         self._frame_shape = frame_shape
+        self._camera = camera
         self.commands_received: List[MovementCommand] = []
 
     def connect(self) -> None:
@@ -60,7 +62,17 @@ class MockDroneController(DroneController):
             timestamp=time.time(),
         )
 
+    def start_video_stream(self) -> None:
+        if self._camera is not None:
+            self._camera.start()
+
+    def stop_video_stream(self) -> None:
+        if self._camera is not None:
+            self._camera.stop()
+
     def get_video_frame(self) -> Optional[np.ndarray]:
+        if self._camera is not None:
+            return self._camera.read()
         return np.zeros(self._frame_shape, dtype=np.uint8)
 
     @property
