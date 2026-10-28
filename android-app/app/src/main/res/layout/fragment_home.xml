@@ -28,7 +28,7 @@
                 android:padding="10dp">
 
                 <TextView
-                    android:id="@+id/textview21312"
+                    android:id="@+id/header_dji_app_connection_status"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="DJI App Connection Status" />
@@ -50,9 +50,10 @@
                 android:padding="10dp">
 
                 <TextView
+                    android:id="@+id/updatable_dji_app_connection_status"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Box2" />
+                    android:text="If you're seeing this something is wrong" />
 
             </LinearLayout>
         </LinearLayout>
@@ -73,7 +74,7 @@
                 android:padding="10dp">
 
                 <TextView
-                    android:id="@+id/textview2"
+                    android:id="@+id/header_dji_drone_connection_status"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Drone Connection Status" />
@@ -95,9 +96,10 @@
                 android:padding="10dp">
 
                 <TextView
+                    android:id="@+id/updatable_dji_drone_connection_status"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Box2" />
+                    android:text="If you're seeing this something is wrong" />
 
             </LinearLayout>
         </LinearLayout>
