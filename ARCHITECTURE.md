@@ -7,12 +7,10 @@ Camera / drone.get_video_frame()
    |
 OpenCV
    |
-YOLO (app/person_detector.py)
+YOLO + ByteTrack (app/detection_module.py)
    |
-Person Detection
-   |
-Person Tracking (app/person_tracker.py)
-   |
+User selection (app/person_tracker.py) ---- other people: TrackingModule -> ComputeActions --+
+   |                                         objects: ObjectLocator ------------------------+-> AudioOutput + SessionLogger
 Follow-Me Controller (app/control/follow_controller.py)
    |
 SafetyManager (app/safety/safety_manager.py)
@@ -111,10 +109,16 @@ app/
   main.py                    # wiring: detection -> tracking -> follow -> safety -> drone
   config.py                  # env-var configuration, conservative defaults
   logging_setup.py           # structured logging config
-  person_detector.py         # YOLO wrapper (unchanged, platform-agnostic)
-  person_tracker.py          # bbox -> direction/distance (unchanged, platform-agnostic)
+  detection_module.py        # YOLO + ByteTrack wrapper -> Detection (label, box, track_id)
+  person_tracker.py          # user selection, horizontal error, head-position distance
+  tracking_module.py         # per-person activity (NEW / APPROACHING / LEFT FRAME ...)
+  compute_actions.py         # which activities become spoken alerts, with cooldowns
+  object_locator.py          # "chair on your left" announcements for nearby objects
+  audio_output.py            # offline text-to-speech on a background thread
+  session_logger.py          # JSON Lines session log in logs/ for caregiver review
+  webcam_source.py           # laptop camera / recorded clip for --drone mock
   control/
-    follow_controller.py     # decision table (unchanged) + get_movement_command adapter (new)
+    follow_controller.py     # proportional yaw/forward MovementCommand from the user's position
   drone/
     controller.py            # DroneController interface, MovementCommand, Telemetry
     mock_controller.py        # in-memory fake for tests / --drone mock
