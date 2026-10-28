@@ -6,6 +6,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.dronebuddy.bridge.bridge.BridgeServer
 import com.dronebuddy.bridge.dji.DjiCameraStreamProvider
+import com.dronebuddy.bridge.dji.DjiCommandHandler
 import com.dronebuddy.bridge.dji.DjiSdkConnectionManager
 import com.dronebuddy.bridge.dji.DjiTelemetryProvider
 import com.dronebuddy.bridge.dji.DjiVirtualStickController
@@ -28,6 +29,7 @@ class MainActivity : AppCompatActivity() {
 
     private var bridgeServer: BridgeServer? = null
     private val virtualStick = DjiVirtualStickController()
+    private val commandHandler = DjiCommandHandler(virtualStick)
     private val telemetryProvider = DjiTelemetryProvider()
     private val cameraStreamProvider = DjiCameraStreamProvider()
     private lateinit var sdkConnectionManager: DjiSdkConnectionManager
@@ -63,7 +65,7 @@ class MainActivity : AppCompatActivity() {
         sdkConnectionManager.registerAndInit()
 
         telemetryProvider.startListening { snapshot ->
-            bridgeServer?.broadcastTelemetry(
+            bridgeServer?.sendTelemetry(
                 BridgeMessage.Telemetry(
                     battery = snapshot.battery,
                     connected = aircraftConnected,
@@ -80,14 +82,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         cameraStreamProvider.startListening { jpegBytes ->
-            bridgeServer?.broadcastVideoFrame(jpegBytes)
+            bridgeServer?.sendVideoFrame(jpegBytes)
         }
 
         startBridgeServer()
     }
 
     private fun startBridgeServer() {
-        val server = BridgeServer(port = BRIDGE_PORT, virtualStick = virtualStick)
+        commandHandler.start()
+        val server = BridgeServer(port = BRIDGE_PORT, handler = commandHandler)
         bridgeServer = server
         server.start()
         bridgeStatusText.text = "Bridge: listening on $BRIDGE_PORT"
@@ -98,5 +101,6 @@ class MainActivity : AppCompatActivity() {
         telemetryProvider.stopListening()
         cameraStreamProvider.stopListening()
         bridgeServer?.shutdownServer()
+        commandHandler.stop()
     }
 }

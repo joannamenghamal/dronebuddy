@@ -1,8 +1,6 @@
 package com.dronebuddy.bridge.bridge
 
 import android.util.Log
-import com.dronebuddy.bridge.dji.DjiFlightActions
-import com.dronebuddy.bridge.dji.DjiVirtualStickController
 import com.dronebuddy.bridge.protocol.BridgeMessage
 import com.dronebuddy.bridge.protocol.ProtocolCodec
 import org.java_websocket.WebSocket
@@ -21,33 +19,55 @@ import kotlin.concurrent.thread
  * local network while the Python process may be run from any machine that
  * can reach it.
  *
- * Safety-critical behaviors implemented here per DRONE_BRIDGE.md /
- * SAFETY.md, independent of whatever the Python-side SafetyManager also
- * does - this app must not trust the far end to always behave:
- *  - staleCommandTimeoutMs: if no valid flight_command arrives in time,
- *    force a hover rather than continuing the last velocity indefinitely.
- *  - connectionLossTimeoutMs: if the socket itself doesn't produce any
- *    message (including heartbeats) in time, force a hover/land.
- *  - Every inbound flight_command is validated by ProtocolCodec before it
- *    reaches DjiVirtualStickController; malformed input never reaches
- *    virtual stick.
+ * This class only carries messages. It never touches the DJI SDK: the app
+ * (MainActivity and the dji/ classes) owns the aircraft connection and
+ * decides what every command means for the aircraft. Inbound messages are
+ * decoded and handed to [Handler]; outbound telemetry/video/acks are sent on
+ * the app's behalf.
  *
- * takeoff/land go through DjiFlightActions (plain DJIKey action calls), not
- * the virtual stick - those two are the one pair of commands that must work
- * even before virtual stick is enabled.
+ * The one thing it does on its own is notice link silence: if no message
+ * (including heartbeats) arrives within connectionLossTimeoutMs, it tells
+ * the handler via [Handler.onLinkLost] - onMessage alone would never fire
+ * again to notice a client that simply stopped sending. Every inbound
+ * flight_command is validated by ProtocolCodec before it is handed on, so
+ * malformed input never reaches the app.
  */
 class BridgeServer(
     port: Int,
-    private val virtualStick: DjiVirtualStickController,
-    private val staleCommandTimeoutMs: Long = 1000L,
+    private val handler: Handler,
     private val connectionLossTimeoutMs: Long = 3000L,
 ) : WebSocketServer(InetSocketAddress(port)) {
+
+    /**
+     * Implemented by the app side that owns the aircraft. Called on the
+     * WebSocket server's threads; implementations must not block.
+     */
+    interface Handler {
+        fun onClientConnected()
+
+        /** Socket closed or errored. */
+        fun onClientDisconnected()
+
+        /** Socket still open but silent for connectionLossTimeoutMs. Fires once per silence. */
+        fun onLinkLost()
+
+        /** Already validated by ProtocolCodec. */
+        fun onFlightCommand(command: BridgeMessage.FlightCommand)
+
+        fun onEmergencyStop()
+
+        /** Call [reply] once the action has succeeded or failed; it sends the ack. */
+        fun onTakeoff(reply: (ok: Boolean, detail: String?) -> Unit)
+
+        fun onLand(reply: (ok: Boolean, detail: String?) -> Unit)
+    }
 
     companion object {
         private const val TAG = "BridgeServer"
     }
 
     @Volatile private var lastMessageAtMs: Long = 0L
+    @Volatile private var linkLostReported = false
     @Volatile private var activeClient: WebSocket? = null
     private val watchdogTimer = Timer("bridge-watchdog", true)
 
@@ -55,19 +75,21 @@ class BridgeServer(
         Log.i(TAG, "client connected: ${conn.remoteSocketAddress}")
         activeClient = conn
         lastMessageAtMs = System.currentTimeMillis()
-        virtualStick.sendHover()
+        linkLostReported = false
+        handler.onClientConnected()
     }
 
     override fun onClose(conn: WebSocket, code: Int, reason: String, remote: Boolean) {
         Log.w(TAG, "client disconnected: code=$code reason=$reason")
         if (activeClient === conn) {
             activeClient = null
-            virtualStick.sendHover()
+            handler.onClientDisconnected()
         }
     }
 
     override fun onMessage(conn: WebSocket, message: String) {
         lastMessageAtMs = System.currentTimeMillis()
+        linkLostReported = false
         val json = try {
             JSONObject(message)
         } catch (e: Exception) {
@@ -80,14 +102,14 @@ class BridgeServer(
             "heartbeat" -> conn.send(ProtocolCodec.encodeAck(BridgeMessage.Ack("heartbeat", true)))
             "emergency_stop" -> {
                 Log.w(TAG, "emergency_stop received from client")
-                virtualStick.sendHover()
+                handler.onEmergencyStop()
                 conn.send(ProtocolCodec.encodeAck(BridgeMessage.Ack("emergency_stop", true)))
             }
-            "takeoff" -> DjiFlightActions.takeoff { ok, error ->
-                conn.send(ProtocolCodec.encodeAck(BridgeMessage.Ack("takeoff", ok, error?.toString())))
+            "takeoff" -> handler.onTakeoff { ok, detail ->
+                conn.send(ProtocolCodec.encodeAck(BridgeMessage.Ack("takeoff", ok, detail)))
             }
-            "land" -> DjiFlightActions.land { ok, error ->
-                conn.send(ProtocolCodec.encodeAck(BridgeMessage.Ack("land", ok, error?.toString())))
+            "land" -> handler.onLand { ok, detail ->
+                conn.send(ProtocolCodec.encodeAck(BridgeMessage.Ack("land", ok, detail)))
             }
             else -> Log.w(TAG, "unknown message type, ignoring")
         }
@@ -103,13 +125,15 @@ class BridgeServer(
             )
             return
         }
-        virtualStick.sendVelocity(cmd.forward, cmd.right, cmd.up, cmd.yaw)
+        handler.onFlightCommand(cmd)
         conn.send(ProtocolCodec.encodeAck(BridgeMessage.Ack("flight_command", true)))
     }
 
     override fun onError(conn: WebSocket?, ex: Exception) {
         Log.e(TAG, "socket error", ex)
-        virtualStick.sendHover()
+        if (conn != null && conn === activeClient) {
+            handler.onClientDisconnected()
+        }
     }
 
     override fun onStart() {
@@ -117,26 +141,17 @@ class BridgeServer(
         startWatchdog()
     }
 
-    /**
-     * Runs independently of onMessage so a client that simply stops sending
-     * (crash, network partition) still gets caught - onMessage alone would
-     * never fire again to notice the silence.
-     */
     private fun startWatchdog() {
         val checkIntervalMs = 200L
         watchdogTimer.scheduleAtFixedRate(
             object : TimerTask() {
                 override fun run() {
-                    val client = activeClient ?: return
+                    activeClient ?: return
                     val silentForMs = System.currentTimeMillis() - lastMessageAtMs
-                    when {
-                        silentForMs >= connectionLossTimeoutMs -> {
-                            Log.w(TAG, "connection loss: no message for ${silentForMs}ms")
-                            virtualStick.sendHover()
-                        }
-                        silentForMs >= staleCommandTimeoutMs -> {
-                            virtualStick.sendHover()
-                        }
+                    if (silentForMs >= connectionLossTimeoutMs && !linkLostReported) {
+                        Log.w(TAG, "connection loss: no message for ${silentForMs}ms")
+                        linkLostReported = true
+                        handler.onLinkLost()
                     }
                 }
             },
@@ -145,7 +160,7 @@ class BridgeServer(
         )
     }
 
-    fun broadcastTelemetry(telemetry: BridgeMessage.Telemetry) {
+    fun sendTelemetry(telemetry: BridgeMessage.Telemetry) {
         activeClient?.send(ProtocolCodec.encodeTelemetry(telemetry))
     }
 
@@ -156,7 +171,7 @@ class BridgeServer(
      * telemetry traffic, since base64-wrapping a binary blob into JSON would
      * cost ~33% more bandwidth for no benefit on a link this latency-sensitive.
      */
-    fun broadcastVideoFrame(jpegBytes: ByteArray) {
+    fun sendVideoFrame(jpegBytes: ByteArray) {
         activeClient?.send(jpegBytes)
     }
 

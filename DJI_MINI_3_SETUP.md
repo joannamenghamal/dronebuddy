@@ -52,7 +52,7 @@ compiling cleanly against the SDK is not the same as flying a real Mini 3.
    silently clip values sent from `MAX_FORWARD_SPEED`/etc.
 4. **Whether the SDK exposes anything distinct from a forced virtual-stick
    hover that qualifies as a true "emergency stop" / motor cutoff** for this
-   aircraft. `BridgeServer`'s current `emergency_stop` handling only forces a
+   aircraft. `DjiCommandHandler`'s current `emergency_stop` handling only forces a
    hover (see `DRONE_BRIDGE.md`) — it does not claim to cut power, and this
    can't be confirmed further without a physical aircraft.
 5. **Region/firmware feature gating.** DJI has historically shipped
