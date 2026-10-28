@@ -28,24 +28,23 @@ class DBDroneConnectionControl(private val context: Context) {
         }
 
         override fun onRegisterFailure(error: IDJIError?) {
-            TODO("Not yet implemented")
             LogItem.addLog("DJI Connection", "Register Failed", LogItem.Status.ERROR)
         }
 
         override fun onProductConnect(productId: Int) {
-            TODO("Not yet implemented")
+            LogItem.addLog("DJI Connection", "Product Connected (Prod ID: ${productId}", LogItem.Status.INFO)
         }
 
         override fun onProductDisconnect(productId: Int) {
-            TODO("Not yet implemented")
+            LogItem.addLog("DJI Connection", "Product Disconnected (Prod ID: ${productId}", LogItem.Status.WARNING)
         }
 
         override fun onDatabaseDownloadProgress(current: Long, total: Long) {
-            TODO("Not yet implemented")
+            LogItem.addLog("DJI Connection", "Database Download Progress: ${current}/${total}", LogItem.Status.INFO)
         }
 
         override fun onProductChanged(productId: Int) {
-            TODO("Not yet implemented")
+            LogItem.addLog("DJI Connection", "Product Channged (Prod ID: ${productId}", LogItem.Status.INFO)
         }
     }
 
