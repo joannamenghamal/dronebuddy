@@ -23,6 +23,15 @@ import java.nio.ByteBuffer
  * camera) — UNVERIFIED against a physical Mini 3, since this environment
  * has no hardware to confirm which index the aircraft actually reports.
  *
+ * This app never shows the feed on screen, so it has no Surface for MSDK to
+ * render into. Without one, MSDK doesn't decode the stream at all and frame
+ * listeners never fire - setKeepAliveDecoding(true) keeps the decoder
+ * running anyway (CameraStreamManager only attaches a stream source when a
+ * render target exists or keep-alive decoding is on).
+ *
+ * Start this once the aircraft is connected, not at app launch: before
+ * then the SDK may not have finished initializing.
+ *
  * Throttled to minIntervalMs between processed frames: the raw feed can push
  * far faster than the follow-me loop (app/main.py) consumes frames, or than
  * the WebSocket link to the Python side can carry comfortably — the
@@ -31,9 +40,10 @@ import java.nio.ByteBuffer
  */
 class DjiCameraStreamProvider {
 
-    private var listener: ICameraStreamManager.CameraFrameListener? = null
+    @Volatile private var listener: ICameraStreamManager.CameraFrameListener? = null
 
     fun startListening(minIntervalMs: Long = 100L, jpegQuality: Int = 70, onFrame: (ByteArray) -> Unit) {
+        stopListening()
         var lastProcessedAtMs = 0L
         val frameListener = ICameraStreamManager.CameraFrameListener { data, offset, length, width, height, format ->
             val now = System.currentTimeMillis()
@@ -51,6 +61,7 @@ class DjiCameraStreamProvider {
         }
 
         listener = frameListener
+        CameraStreamManager.getInstance().setKeepAliveDecoding(true)
         CameraStreamManager.getInstance().addFrameListener(
             ComponentIndexType.LEFT_OR_MAIN,
             ICameraStreamManager.FrameFormat.RGBA_8888,
@@ -59,7 +70,9 @@ class DjiCameraStreamProvider {
     }
 
     fun stopListening() {
-        listener?.let { CameraStreamManager.getInstance().removeFrameListener(it) }
+        val current = listener ?: return
         listener = null
+        CameraStreamManager.getInstance().removeFrameListener(current)
+        CameraStreamManager.getInstance().setKeepAliveDecoding(false)
     }
 }

@@ -52,12 +52,16 @@ class MainActivity : AppCompatActivity() {
                 aircraftConnected = connected
                 runOnUiThread { aircraftStatusText.text = "Aircraft: ${if (connected) "connected" else "disconnected"}" }
                 if (connected) {
+                    cameraStreamProvider.startListening { jpegBytes ->
+                        bridgeServer?.sendVideoFrame(jpegBytes)
+                    }
                     virtualStick.enable { success, error ->
                         if (!success) {
                             Log.w(TAG, "enableVirtualStick failed: $error")
                         }
                     }
                 } else {
+                    cameraStreamProvider.stopListening()
                     virtualStick.disable { _, _ -> }
                 }
             }
@@ -79,10 +83,6 @@ class MainActivity : AppCompatActivity() {
                     timestampEpochMs = System.currentTimeMillis(),
                 )
             )
-        }
-
-        cameraStreamProvider.startListening { jpegBytes ->
-            bridgeServer?.sendVideoFrame(jpegBytes)
         }
 
         startBridgeServer()

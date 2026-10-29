@@ -82,7 +82,11 @@ def run(platform: str, source=None):
             frame = wait_for_frame(drone, FRAME_WAIT_S.get(platform, 0.0))
 
             if frame is None:
-                logger.warning("no frame available from %s", platform)
+                if platform == "dji":
+                    logger.error("no video from the DJI bridge after %.0fs - is the aircraft connected "
+                                 "in the phone app, and is its camera feed on?", FRAME_WAIT_S["dji"])
+                else:
+                    logger.warning("no frame available from %s", platform)
                 break
 
             telemetry = drone.get_telemetry()

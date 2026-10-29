@@ -261,8 +261,11 @@ class DJIController(DroneController):
             return self._telemetry
 
     def get_video_frame(self) -> Optional[np.ndarray]:
+        # A copy, because callers draw on the frame (app/main.py's HUD) and the
+        # loop can ask again before the bridge has sent the next one - drawing
+        # on the shared array would stack overlays on top of each other.
         with self._lock:
-            return self._latest_frame
+            return None if self._latest_frame is None else self._latest_frame.copy()
 
     @property
     def is_connected(self) -> bool:

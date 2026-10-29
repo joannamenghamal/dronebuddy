@@ -260,3 +260,15 @@ def test_get_video_frame_accepts_frames_over_one_mebibyte(drone, bridge):
     _wait_until(lambda: drone.get_video_frame() is not None)
     assert drone.get_video_frame().shape == (1080, 1920, 3)
     assert drone.is_connected
+
+
+def test_drawing_on_a_returned_frame_does_not_change_the_next_one(drone, bridge):
+    ok, encoded = cv2.imencode(".jpg", np.zeros((8, 8, 3), dtype=np.uint8))
+    assert ok
+    bridge.push_video_frame(encoded.tobytes())
+    _wait_until(lambda: drone.get_video_frame() is not None)
+
+    first = drone.get_video_frame()
+    first[:] = 255
+
+    assert drone.get_video_frame().max() < 255

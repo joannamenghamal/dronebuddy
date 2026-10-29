@@ -152,6 +152,17 @@ throttles to one frame per `minIntervalMs` (default 100ms / 10fps — the
 raw feed can push far faster than the follow-me loop consumes frames or
 the link can carry comfortably), JPEG-encodes via `Bitmap.compress`, and
 hands the bytes to `BridgeServer.sendVideoFrame` (wired up in `MainActivity`).
+`MainActivity` starts it when the aircraft connects (not at app launch,
+before the SDK is ready) and stops it on disconnect. The app has no
+on-screen video view, so `DjiCameraStreamProvider` turns on
+`CameraStreamManager.setKeepAliveDecoding(true)`: without a render
+Surface and with keep-alive off, MSDK doesn't decode the stream and frame
+listeners never fire.
+
+On the Python side, `app/main.py` waits up to 10s for the first frame
+with `--drone dji`, then exits with an error naming the likely cause.
+`DJIController.get_video_frame()` returns a copy, so drawing the HUD on it
+doesn't stack onto the next call's frame.
 
 Chosen over a separate RTMP/RTSP channel to avoid a second connection
 lifecycle and a second place authentication would eventually need adding —
