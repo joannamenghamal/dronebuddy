@@ -195,6 +195,14 @@ Split between the transport (`BridgeServer`) and the app's DJI layer
 - **Safe default** (`DjiCommandHandler`): on client connect, on client
   disconnect, and on socket error, the app forces a hover, never the last
   command received.
+- **Takeoff and landing are left alone** (`DjiCommandHandler`): from a
+  `takeoff`/`land` until the next `flight_command` or `emergency_stop`, none
+  of the hovers above are sent. `app/main.py` stops sending commands after
+  asking to land, and hover inputs during DJI's auto-landing or takeoff
+  could cancel it.
+
+Building your own Android app against this protocol? See
+[BRIDGE_INTEGRATION.md](BRIDGE_INTEGRATION.md).
 
 ## What's still open
 

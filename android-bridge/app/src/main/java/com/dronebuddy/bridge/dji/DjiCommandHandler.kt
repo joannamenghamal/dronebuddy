@@ -19,6 +19,12 @@ import java.util.TimerTask
  *    a silent link delivers no commands.
  *  - Client connect, disconnect and link loss all force a hover - never
  *    the last command received.
+ *  - Except during a takeoff or landing: Python deliberately stops sending
+ *    flight_commands then (app/main.py sends nothing after asking to land),
+ *    and a stream of hover inputs could cancel DJI's auto-landing or stall
+ *    the takeoff climb. The aircraft holds position by itself without
+ *    stick input, so nothing is lost. The next flight_command, or an
+ *    emergency_stop, ends this.
  *
  * takeoff/land go through DjiFlightActions (plain DJIKey action calls), not
  * the virtual stick - those two are the one pair of commands that must work
@@ -36,13 +42,14 @@ class DjiCommandHandler(
 
     @Volatile private var clientConnected = false
     @Volatile private var lastFlightCommandAtMs: Long = 0L
+    @Volatile private var autoFlightActionInProgress = false
     private val watchdogTimer = Timer("dji-command-watchdog", true)
 
     fun start() {
         watchdogTimer.scheduleAtFixedRate(
             object : TimerTask() {
                 override fun run() {
-                    if (!clientConnected) return
+                    if (!clientConnected || autoFlightActionInProgress) return
                     if (System.currentTimeMillis() - lastFlightCommandAtMs >= staleCommandTimeoutMs) {
                         virtualStick.sendHover()
                     }
@@ -65,28 +72,42 @@ class DjiCommandHandler(
 
     override fun onClientDisconnected() {
         clientConnected = false
-        virtualStick.sendHover()
+        if (!autoFlightActionInProgress) virtualStick.sendHover()
     }
 
     override fun onLinkLost() {
+        if (autoFlightActionInProgress) {
+            Log.w(TAG, "bridge link lost during takeoff/landing, letting it finish")
+            return
+        }
         Log.w(TAG, "bridge link lost, hovering")
         virtualStick.sendHover()
     }
 
     override fun onFlightCommand(command: BridgeMessage.FlightCommand) {
+        autoFlightActionInProgress = false
         lastFlightCommandAtMs = System.currentTimeMillis()
         virtualStick.sendVelocity(command.forward, command.right, command.up, command.yaw)
     }
 
     override fun onEmergencyStop() {
+        autoFlightActionInProgress = false
         virtualStick.sendHover()
     }
 
     override fun onTakeoff(reply: (ok: Boolean, detail: String?) -> Unit) {
-        DjiFlightActions.takeoff { ok, error -> reply(ok, error?.toString()) }
+        autoFlightActionInProgress = true
+        DjiFlightActions.takeoff { ok, error ->
+            if (!ok) autoFlightActionInProgress = false
+            reply(ok, error?.toString())
+        }
     }
 
     override fun onLand(reply: (ok: Boolean, detail: String?) -> Unit) {
-        DjiFlightActions.land { ok, error -> reply(ok, error?.toString()) }
+        autoFlightActionInProgress = true
+        DjiFlightActions.land { ok, error ->
+            if (!ok) autoFlightActionInProgress = false
+            reply(ok, error?.toString())
+        }
     }
 }

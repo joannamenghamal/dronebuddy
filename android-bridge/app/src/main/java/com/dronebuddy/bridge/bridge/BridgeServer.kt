@@ -4,6 +4,7 @@ import android.util.Log
 import com.dronebuddy.bridge.protocol.BridgeMessage
 import com.dronebuddy.bridge.protocol.ProtocolCodec
 import org.java_websocket.WebSocket
+import org.java_websocket.exceptions.WebsocketNotConnectedException
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
 import org.json.JSONObject
@@ -99,17 +100,17 @@ class BridgeServer(
 
         when (ProtocolCodec.messageType(json)) {
             "flight_command" -> handleFlightCommand(conn, json)
-            "heartbeat" -> conn.send(ProtocolCodec.encodeAck(BridgeMessage.Ack("heartbeat", true)))
+            "heartbeat" -> sendQuietly(conn, ProtocolCodec.encodeAck(BridgeMessage.Ack("heartbeat", true)))
             "emergency_stop" -> {
                 Log.w(TAG, "emergency_stop received from client")
                 handler.onEmergencyStop()
-                conn.send(ProtocolCodec.encodeAck(BridgeMessage.Ack("emergency_stop", true)))
+                sendQuietly(conn, ProtocolCodec.encodeAck(BridgeMessage.Ack("emergency_stop", true)))
             }
             "takeoff" -> handler.onTakeoff { ok, detail ->
-                conn.send(ProtocolCodec.encodeAck(BridgeMessage.Ack("takeoff", ok, detail)))
+                sendQuietly(conn, ProtocolCodec.encodeAck(BridgeMessage.Ack("takeoff", ok, detail)))
             }
             "land" -> handler.onLand { ok, detail ->
-                conn.send(ProtocolCodec.encodeAck(BridgeMessage.Ack("land", ok, detail)))
+                sendQuietly(conn, ProtocolCodec.encodeAck(BridgeMessage.Ack("land", ok, detail)))
             }
             else -> Log.w(TAG, "unknown message type, ignoring")
         }
@@ -118,15 +119,16 @@ class BridgeServer(
     private fun handleFlightCommand(conn: WebSocket, json: JSONObject) {
         val cmd = ProtocolCodec.decodeFlightCommand(json)
         if (cmd == null) {
-            conn.send(
+            sendQuietly(
+                conn,
                 ProtocolCodec.encodeAck(
                     BridgeMessage.Ack("flight_command", false, "validation failed")
-                )
+                ),
             )
             return
         }
         handler.onFlightCommand(cmd)
-        conn.send(ProtocolCodec.encodeAck(BridgeMessage.Ack("flight_command", true)))
+        sendQuietly(conn, ProtocolCodec.encodeAck(BridgeMessage.Ack("flight_command", true)))
     }
 
     override fun onError(conn: WebSocket?, ex: Exception) {
@@ -160,8 +162,22 @@ class BridgeServer(
         )
     }
 
+    /**
+     * The client can disconnect between any check and the send - e.g. a
+     * takeoff/land reply arriving from a DJI callback after Python went
+     * away - and java-websocket throws in that case. Dropping the message
+     * is right: there's no one left to receive it.
+     */
+    private fun sendQuietly(conn: WebSocket?, message: String) {
+        try {
+            conn?.send(message)
+        } catch (e: WebsocketNotConnectedException) {
+            Log.d(TAG, "client gone, dropping outbound message")
+        }
+    }
+
     fun sendTelemetry(telemetry: BridgeMessage.Telemetry) {
-        activeClient?.send(ProtocolCodec.encodeTelemetry(telemetry))
+        sendQuietly(activeClient, ProtocolCodec.encodeTelemetry(telemetry))
     }
 
     /**
@@ -172,7 +188,11 @@ class BridgeServer(
      * cost ~33% more bandwidth for no benefit on a link this latency-sensitive.
      */
     fun sendVideoFrame(jpegBytes: ByteArray) {
-        activeClient?.send(jpegBytes)
+        try {
+            activeClient?.send(jpegBytes)
+        } catch (e: WebsocketNotConnectedException) {
+            Log.d(TAG, "client gone, dropping video frame")
+        }
     }
 
     fun shutdownServer() {
