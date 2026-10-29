@@ -35,7 +35,7 @@ class DjiCameraStreamProvider {
 
     fun startListening(minIntervalMs: Long = 100L, jpegQuality: Int = 70, onFrame: (ByteArray) -> Unit) {
         var lastProcessedAtMs = 0L
-        val frameListener = ICameraStreamManager.CameraFrameListener { data, _, _, width, height, format ->
+        val frameListener = ICameraStreamManager.CameraFrameListener { data, offset, length, width, height, format ->
             val now = System.currentTimeMillis()
             if (format != ICameraStreamManager.FrameFormat.RGBA_8888 || now - lastProcessedAtMs < minIntervalMs) {
                 return@CameraFrameListener
@@ -43,7 +43,7 @@ class DjiCameraStreamProvider {
             lastProcessedAtMs = now
 
             val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-            bitmap.copyPixelsFromBuffer(ByteBuffer.wrap(data))
+            bitmap.copyPixelsFromBuffer(ByteBuffer.wrap(data, offset, length))
             val out = ByteArrayOutputStream()
             bitmap.compress(Bitmap.CompressFormat.JPEG, jpegQuality, out)
             bitmap.recycle()

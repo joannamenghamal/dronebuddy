@@ -1,5 +1,6 @@
 import argparse
 import logging
+import time
 
 import cv2
 
@@ -38,6 +39,10 @@ ALERT_COLOR = (0, 0, 255)
 LABEL_TEXT_COLOR = (0, 0, 0)
 HUD_BACKGROUND = (0, 0, 0)
 
+## The DJI feed only starts arriving over the bridge a moment after connecting.
+## A mock camera returning no frame means the camera/clip has ended, so no wait there.
+FRAME_WAIT_S = {"dji": 10.0}
+
 
 def build_drone(platform: str, source=None) -> DroneController:
     config = load_config()
@@ -74,7 +79,7 @@ def run(platform: str, source=None):
 
     try:
         while True:
-            frame = drone.get_video_frame()
+            frame = wait_for_frame(drone, FRAME_WAIT_S.get(platform, 0.0))
 
             if frame is None:
                 logger.warning("no frame available from %s", platform)
@@ -146,6 +151,16 @@ def run(platform: str, source=None):
 
         audio.say("Session ended")
         audio.close()
+
+
+def wait_for_frame(drone: DroneController, timeout_s: float, clock=time.monotonic, sleep=time.sleep):
+    """Latest video frame, polling for up to timeout_s while there is none yet."""
+    deadline = clock() + timeout_s
+    while True:
+        frame = drone.get_video_frame()
+        if frame is not None or clock() >= deadline:
+            return frame
+        sleep(0.05)
 
 
 def apply_safety_decision(drone: DroneController, safety: SafetyManager, decision, landing=False) -> bool:

@@ -163,3 +163,41 @@ def test_failed_land_request_is_retried_next_frame():
     _, landing = run_frames_without_user(drone, safety, clock, CONFIG.lost_person_land_timeout_s + 0.25)
     assert landing
     assert drone.land_calls == 2
+
+
+class LateFrameDrone(MockDroneController):
+    """Like the DJI bridge: no frame until the feed has started."""
+
+    def __init__(self, frames_before_video):
+        super().__init__()
+        self._polls_left = frames_before_video
+
+    def get_video_frame(self):
+        if self._polls_left > 0:
+            self._polls_left -= 1
+            return None
+        return super().get_video_frame()
+
+
+def test_wait_for_frame_waits_for_a_late_feed():
+    from app.main import wait_for_frame
+
+    clock = {"t": 0.0}
+    sleep = lambda s: clock.__setitem__("t", clock["t"] + s)
+    frame = wait_for_frame(LateFrameDrone(5), 10.0, clock=lambda: clock["t"], sleep=sleep)
+    assert frame is not None
+
+
+def test_wait_for_frame_gives_up_after_timeout():
+    from app.main import wait_for_frame
+
+    clock = {"t": 0.0}
+    sleep = lambda s: clock.__setitem__("t", clock["t"] + s)
+    assert wait_for_frame(LateFrameDrone(10_000), 1.0, clock=lambda: clock["t"], sleep=sleep) is None
+    assert clock["t"] >= 1.0
+
+
+def test_wait_for_frame_without_timeout_checks_once():
+    from app.main import wait_for_frame
+
+    assert wait_for_frame(LateFrameDrone(1), 0.0, sleep=lambda s: None) is None
