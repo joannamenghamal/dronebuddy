@@ -7,7 +7,7 @@ from app.config import Config
 from app.control.follow_controller import get_movement_command
 from app.drone.mock_controller import MockDroneController
 from app.person_tracker import get_head_ratio, get_horizontal_error, is_head_cut_off
-from app.safety.safety_manager import SafetyAction, SafetyManager
+from app.safety.safety_manager import SafetyAction, SafetyManager, SafetyState
 
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
@@ -85,3 +85,81 @@ def test_person_lost_after_timeout_falls_back_to_hover():
 
     assert decision.action == SafetyAction.HOVER
     assert decision.command.is_zero
+
+
+
+class CountingDrone(MockDroneController):
+    def __init__(self, fail_land_times=0):
+        super().__init__()
+        self.land_calls = 0
+        self.emergency_stops = 0
+        self._fail_land_times = fail_land_times
+
+    def land(self):
+        self.land_calls += 1
+        if self.land_calls <= self._fail_land_times:
+            raise RuntimeError("simulated land rejection")
+        super().land()
+
+    def emergency_stop(self):
+        self.emergency_stops += 1
+        super().emergency_stop()
+
+
+def run_frames_without_user(drone, safety, clock, seconds, landing=False, frame_s=0.1):
+    """Steps the loop the way app/main.py does while the user is out of view."""
+    from app.main import apply_safety_decision
+
+    decisions = []
+    for _ in range(round(seconds / frame_s)):
+        clock["t"] += frame_s
+        safety.note_telemetry(drone.get_telemetry())
+        decision = safety.decide(get_movement_command(0.0, 0.1, CONFIG))
+        landing = apply_safety_decision(drone, safety, decision, landing)
+        decisions.append(decision)
+    return decisions, landing
+
+
+def test_person_lost_hovers_then_lands_once_after_land_timeout():
+    from app.main import apply_safety_decision
+
+    drone = CountingDrone()
+    drone.connect()
+    clock = {"t": 0.0}
+    safety = SafetyManager(CONFIG, clock=lambda: clock["t"])
+    run_one_frame(drone, safety, (270, 400, 370, 480))
+
+    decisions, landing = run_frames_without_user(drone, safety, clock, CONFIG.lost_person_land_timeout_s - 0.5)
+    assert not landing
+    assert decisions[-1].state == SafetyState.LOST_PERSON
+    assert drone.land_calls == 0
+
+    decisions, landing = run_frames_without_user(drone, safety, clock, 1.0)
+    assert landing
+    assert decisions[-1].state == SafetyState.LOST_PERSON_LAND
+    assert drone.land_calls == 1
+
+    # The user walks back into view: no movement goes out while landing.
+    sent_before = len(drone.commands_received)
+    safety.note_person_visible(True)
+    decision = safety.decide(get_movement_command(0.3, 0.1, CONFIG))
+    assert decision.action == SafetyAction.EXECUTE
+    assert apply_safety_decision(drone, safety, decision, landing)
+    assert len(drone.commands_received) == sent_before
+
+    # Emergency stop still gets through.
+    safety.trigger_emergency_stop()
+    apply_safety_decision(drone, safety, safety.decide(get_movement_command(0.0, 0.1, CONFIG)), landing)
+    assert drone.emergency_stops == 1
+
+
+def test_failed_land_request_is_retried_next_frame():
+    drone = CountingDrone(fail_land_times=1)
+    drone.connect()
+    clock = {"t": 0.0}
+    safety = SafetyManager(CONFIG, clock=lambda: clock["t"])
+    run_one_frame(drone, safety, (270, 400, 370, 480))
+
+    _, landing = run_frames_without_user(drone, safety, clock, CONFIG.lost_person_land_timeout_s + 0.25)
+    assert landing
+    assert drone.land_calls == 2

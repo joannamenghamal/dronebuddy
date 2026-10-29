@@ -67,6 +67,7 @@ def run(platform: str, source=None):
     drone.start_video_stream()
 
     user_id = None
+    landing = False
 
     session_log.log("session_start", platform=platform, source=source)
     audio.say("Visual Buddy ready")
@@ -117,7 +118,11 @@ def run(platform: str, source=None):
             safety.note_person_visible(user is not None)
             command = compute_follow_command(user, frame_width, frame_height, config)
             decision = safety.decide(command if command is not None else HOVER)
-            apply_safety_decision(drone, safety, decision)
+            was_landing = landing
+            landing = apply_safety_decision(drone, safety, decision, landing)
+            if landing and not was_landing:
+                session_log.log("land", reason=decision.state.value)
+                audio.say("Landing")
 
             draw_overlay(frame, detections, user, tracking, decision.command, decision.state)
             cv2.imshow(WINDOW_NAME, frame)
@@ -143,19 +148,34 @@ def run(platform: str, source=None):
         audio.close()
 
 
-def apply_safety_decision(drone: DroneController, safety: SafetyManager, decision) -> None:
+def apply_safety_decision(drone: DroneController, safety: SafetyManager, decision, landing=False) -> bool:
+    """Returns whether a landing has been requested. Once it has, nothing but
+    an emergency stop goes out for the rest of the session, so the user
+    coming back into view can't pull the drone out of its landing."""
     if decision.state.name != "NOMINAL":
         logger.info("safety state=%s action=%s", decision.state.value, decision.action.value)
 
-    if decision.action == SafetyAction.EXECUTE:
+    if decision.action == SafetyAction.EMERGENCY_STOP:
+        drone.emergency_stop()
+        return landing
+
+    if landing:
+        return True
+
+    if decision.action in (SafetyAction.EXECUTE, SafetyAction.HOVER):
+        ## A hover is a command too: without noting it, STALE_COMMAND would take
+        ## over 1s into any hover and mask LOST_PERSON's land timeout
         drone.move(decision.command)
         safety.note_command_issued()
-    elif decision.action == SafetyAction.HOVER:
-        drone.move(decision.command)
     elif decision.action == SafetyAction.LAND:
-        drone.land()
-    elif decision.action == SafetyAction.EMERGENCY_STOP:
-        drone.emergency_stop()
+        try:
+            drone.land()
+        except Exception:
+            ## Not landing yet - try again next frame
+            logger.exception("land request failed")
+            return False
+        return True
+    return False
 
 
 def compute_follow_command(user, frame_width, frame_height, config):

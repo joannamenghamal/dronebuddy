@@ -10,17 +10,22 @@ output directly; every command passes through
 
 | Condition | Detection | Response |
 |---|---|---|
-| Emergency stop | `trigger_emergency_stop()` called explicitly | Latches; every `decide()` call returns `EMERGENCY_STOP` until `reset_emergency_stop()` is called explicitly. Never clears itself. |
+| Emergency stop | `trigger_emergency_stop()` called explicitly (SPACE in `app/main.py`) | Latches; every `decide()` call returns `EMERGENCY_STOP` until `reset_emergency_stop()` is called explicitly. Never clears itself. On DJI this forces a hover; it does not cut the motors. |
 | Low battery | Latest telemetry `battery <= MIN_BATTERY_PERCENT` (default 20) | `LAND` |
 | Connection / telemetry loss | No telemetry received within `CONNECTION_LOSS_TIMEOUT_S` (default 3.0s) — includes the case where no telemetry has ever arrived | `HOVER` |
 | Stale AI command | No command issued within `STALE_COMMAND_TIMEOUT_S` (default 1.0s) | `HOVER` |
 | Lost person | No `note_person_visible(True)` within `LOST_PERSON_TIMEOUT_S` (default 2.0s) | `HOVER` |
+| Lost person, longer | No `note_person_visible(True)` within `LOST_PERSON_LAND_TIMEOUT_S` (default 5.0s) | `LAND` |
 | Invalid command | `MovementCommand` contains `NaN`/`Infinity` on any axis | Rejected, `HOVER` |
 | Command output limits | Any axis outside `[-1.0, 1.0]` | Clamped in `MovementCommand.clamped()` before being sent |
 
 Priority order (highest first): emergency stop > low battery > (connection
-loss / stale command / lost person, all -> hover) > invalid command > nominal
-execute. See `SafetyManager.decide()` for the exact order.
+loss / stale command -> hover) > lost person (land after 5s, hover before
+that) > invalid command > nominal execute.
+
+Once `app/main.py` has asked the drone to land (low battery or lost person),
+it sends nothing else for the rest of the session except an emergency stop,
+so the user walking back into view doesn't interrupt the landing. See `SafetyManager.decide()` for the exact order.
 
 ## What connection loss can and can't do
 
@@ -56,7 +61,7 @@ implementation should touch DJI geofencing or firmware safety settings.
 ## Config knobs affecting safety (`app/config.py` / `.env.example`)
 
 `MIN_BATTERY_PERCENT`, `STALE_COMMAND_TIMEOUT_S`, `CONNECTION_LOSS_TIMEOUT_S`,
-`LOST_PERSON_TIMEOUT_S`, `MAX_FORWARD_SPEED`, `MAX_LATERAL_SPEED`,
+`LOST_PERSON_TIMEOUT_S`, `LOST_PERSON_LAND_TIMEOUT_S`, `MAX_FORWARD_SPEED`, `MAX_LATERAL_SPEED`,
 `MAX_VERTICAL_SPEED`, `MAX_YAW_RATE`. Defaults are intentionally conservative
 (speeds at 20-30% of platform max). Raise them only after verifying behavior
 with `--drone mock`, then with `--drone dji` on the ground, per
