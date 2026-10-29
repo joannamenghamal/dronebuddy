@@ -247,3 +247,16 @@ def test_get_video_frame_resets_to_none_after_disconnect(bridge):
     drone.disconnect()
 
     assert drone.get_video_frame() is None
+
+
+def test_get_video_frame_accepts_frames_over_one_mebibyte(drone, bridge):
+    # Random noise barely compresses, so this JPEG is well over websockets' 1 MiB default.
+    source = np.random.default_rng(0).integers(0, 256, (1080, 1920, 3), dtype=np.uint8)
+    ok, encoded = cv2.imencode(".jpg", source, [cv2.IMWRITE_JPEG_QUALITY, 95])
+    assert ok and len(encoded) > 1024 * 1024
+
+    bridge.push_video_frame(encoded.tobytes())
+
+    _wait_until(lambda: drone.get_video_frame() is not None)
+    assert drone.get_video_frame().shape == (1080, 1920, 3)
+    assert drone.is_connected

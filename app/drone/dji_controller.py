@@ -16,6 +16,9 @@ logger = logging.getLogger("dronebuddy.drone.dji")
 HEARTBEAT_INTERVAL_S = 0.5
 CONNECT_TIMEOUT_S = 10.0
 ACK_TIMEOUT_S = 5.0
+## websockets closes the connection on any message over max_size (1 MiB by
+## default). A JPEG video frame from the bridge can get close to that.
+MAX_MESSAGE_BYTES = 16 * 1024 * 1024
 
 
 class DJIController(DroneController):
@@ -82,7 +85,7 @@ class DJIController(DroneController):
     async def _main(self, ready: threading.Event, error_box: list) -> None:
         uri = f"ws://{self.host}:{self.port}"
         try:
-            async with websockets.connect(uri, open_timeout=CONNECT_TIMEOUT_S) as ws:
+            async with websockets.connect(uri, open_timeout=CONNECT_TIMEOUT_S, max_size=MAX_MESSAGE_BYTES) as ws:
                 self._ws = ws
                 with self._lock:
                     self._connected = True
