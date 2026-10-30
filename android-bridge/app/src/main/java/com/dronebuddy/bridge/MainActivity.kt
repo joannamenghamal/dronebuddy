@@ -4,8 +4,10 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.dronebuddy.bridge.audio.SpeechPlayer
 import com.dronebuddy.bridge.bridge.BridgeServer
 import com.dronebuddy.bridge.dji.DjiCameraStreamProvider
+import com.dronebuddy.bridge.dji.DjiCommandHandler
 import com.dronebuddy.bridge.dji.DjiSdkConnectionManager
 import com.dronebuddy.bridge.dji.DjiTelemetryProvider
 import com.dronebuddy.bridge.dji.DjiVirtualStickController
@@ -28,9 +30,11 @@ class MainActivity : AppCompatActivity() {
 
     private var bridgeServer: BridgeServer? = null
     private val virtualStick = DjiVirtualStickController()
+    private val commandHandler = DjiCommandHandler(virtualStick)
     private val telemetryProvider = DjiTelemetryProvider()
     private val cameraStreamProvider = DjiCameraStreamProvider()
     private lateinit var sdkConnectionManager: DjiSdkConnectionManager
+    private lateinit var speechPlayer: SpeechPlayer
     @Volatile private var aircraftConnected = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,12 +54,16 @@ class MainActivity : AppCompatActivity() {
                 aircraftConnected = connected
                 runOnUiThread { aircraftStatusText.text = "Aircraft: ${if (connected) "connected" else "disconnected"}" }
                 if (connected) {
+                    cameraStreamProvider.startListening { jpegBytes ->
+                        bridgeServer?.sendVideoFrame(jpegBytes)
+                    }
                     virtualStick.enable { success, error ->
                         if (!success) {
                             Log.w(TAG, "enableVirtualStick failed: $error")
                         }
                     }
                 } else {
+                    cameraStreamProvider.stopListening()
                     virtualStick.disable { _, _ -> }
                 }
             }
@@ -63,7 +71,7 @@ class MainActivity : AppCompatActivity() {
         sdkConnectionManager.registerAndInit()
 
         telemetryProvider.startListening { snapshot ->
-            bridgeServer?.broadcastTelemetry(
+            bridgeServer?.sendTelemetry(
                 BridgeMessage.Telemetry(
                     battery = snapshot.battery,
                     connected = aircraftConnected,
@@ -79,15 +87,16 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        cameraStreamProvider.startListening { jpegBytes ->
-            bridgeServer?.broadcastVideoFrame(jpegBytes)
-        }
+        // Speaks Python's alerts to the user; created before the bridge so the
+        // first `say` ("Visual Buddy ready") isn't lost
+        speechPlayer = SpeechPlayer(applicationContext)
 
         startBridgeServer()
     }
 
     private fun startBridgeServer() {
-        val server = BridgeServer(port = BRIDGE_PORT, virtualStick = virtualStick)
+        commandHandler.start()
+        val server = BridgeServer(port = BRIDGE_PORT, handler = commandHandler, onSay = speechPlayer::speak)
         bridgeServer = server
         server.start()
         bridgeStatusText.text = "Bridge: listening on $BRIDGE_PORT"
@@ -98,5 +107,7 @@ class MainActivity : AppCompatActivity() {
         telemetryProvider.stopListening()
         cameraStreamProvider.stopListening()
         bridgeServer?.shutdownServer()
+        commandHandler.stop()
+        if (::speechPlayer.isInitialized) speechPlayer.shutdown()
     }
 }

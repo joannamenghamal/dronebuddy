@@ -14,13 +14,22 @@ DJI SDK registration and RC connection. This repo's autonomy code runs on a
 companion computer in Python, so an Android process has to sit in between:
 
 ```
-Python AI / Autonomy  <--WebSocket-->  Android DJI Bridge  <--DJI Mobile SDK-->  DJI Mini 3
+Python AI / Autonomy  <--WebSocket-->  Android app [BridgeServer | DJI layer]  <--DJI Mobile SDK-->  DJI Mini 3
 ```
+
+Inside the Android app the two halves are kept apart. `BridgeServer` only
+carries messages: it decodes and validates what Python sends, hands it to
+the app through `BridgeServer.Handler`, and sends acks, telemetry and video
+back. It never calls the DJI SDK. The app (`MainActivity` and the `dji/`
+classes) owns the DJI connection: SDK registration, virtual stick,
+takeoff/land, telemetry, the camera feed, and what each command means for
+the aircraft. `DjiCommandHandler` is the app's `BridgeServer.Handler`.
 
 ## Transport
 
 WebSocket, one connection, Android app as the server (`BridgeServer.kt`),
-Python process as the client (`DJIController`). Chosen over raw TCP/UDP for
+Python process as the client (`DJIController`). Swapping what's behind
+`BridgeServer.Handler` changes nothing on the wire. Chosen over raw TCP/UDP for
 built-in framing and a ping/pong keepalive; chosen over HTTP polling because
 flight commands need low, consistent latency in both directions.
 
@@ -105,8 +114,9 @@ carried by `telemetry` pushes and `ack`s.
 {"type": "emergency_stop", "timestamp": 0}
 ```
 
-Android treats this as highest priority: it forces an immediate hover via
-`VirtualStickManager`, ahead of anything already queued. This is `land()`'s
+`BridgeServer` hands this straight to `Handler.onEmergencyStop()` and acks
+it. `DjiCommandHandler` forces an immediate hover via
+`VirtualStickManager`. This is `land()`'s
 and `takeoff()`'s opposite in one respect — `DJIController.emergency_stop()`
 does **not** wait for the ack, since blocking on the same channel it's
 trying to interrupt would violate `DroneController.emergency_stop`'s "must
@@ -127,6 +137,34 @@ and `land`. `ok: false` carries a `detail` string when Android rejects or
 fails a command (validation failure, or an `IDJIError` from the SDK for
 `takeoff`/`land`).
 
+### `voice_command` (Android -> Python)
+
+```json
+{"type": "voice_command", "command": "WHERE_IS", "argument": "cup", "heard": "where is my mug", "confidence": 0.82}
+```
+
+The visually impaired user's spoken command, recognized on the phone while
+its full-screen push-to-talk button is held. `command` is one of
+`START_SESSION`, `STOP_SESSION`, `WHERE_IS`, `REPEAT`, `LOUDER`, `QUIETER`
+(`app/voice_commands.py`); `argument` is a YOLO class name for `WHERE_IS`
+(the app maps "mug" to `cup`), else `null`; `heard` is the raw speech-to-text
+for the session log. No ack. Python side: `MicInput` (registered with
+`DJIController.add_message_handler`) ignores unknown commands and anything
+below 0.5 `confidence`.
+
+### `say` (Python -> Android)
+
+```json
+{"type": "say", "text": "Chair ahead", "priority": "URGENT", "pan": -0.6, "volume": 0.8}
+```
+
+Something to speak to the user with the phone's text-to-speech. `priority`
+is `NORMAL` or `URGENT`; an `URGENT` one cuts off a `NORMAL` one already
+playing. `pan` is -1.0 (left ear) .. +1.0 (right ear); `volume` is 0.0 ..
+1.0. No ack: a missed sentence is replaced by the next alert. Python side:
+`BridgeSpeech`, sent with `DJIController.send_message`. Both audio messages
+are built and parsed in `app/bridge_messages.py`.
+
 ### Video (Android -> Python)
 
 Raw binary WebSocket frames — JPEG bytes, no JSON envelope — interleaved on
@@ -141,7 +179,18 @@ feed API, `ComponentIndexType.LEFT_OR_MAIN`, `FrameFormat.RGBA_8888`),
 throttles to one frame per `minIntervalMs` (default 100ms / 10fps — the
 raw feed can push far faster than the follow-me loop consumes frames or
 the link can carry comfortably), JPEG-encodes via `Bitmap.compress`, and
-hands the bytes to `BridgeServer.broadcastVideoFrame`.
+hands the bytes to `BridgeServer.sendVideoFrame` (wired up in `MainActivity`).
+`MainActivity` starts it when the aircraft connects (not at app launch,
+before the SDK is ready) and stops it on disconnect. The app has no
+on-screen video view, so `DjiCameraStreamProvider` turns on
+`CameraStreamManager.setKeepAliveDecoding(true)`: without a render
+Surface and with keep-alive off, MSDK doesn't decode the stream and frame
+listeners never fire.
+
+On the Python side, `app/main.py` waits up to 10s for the first frame
+with `--drone dji`, then exits with an error naming the likely cause.
+`DJIController.get_video_frame()` returns a copy, so drawing the HUD on it
+doesn't stack onto the next call's frame.
 
 Chosen over a separate RTMP/RTSP channel to avoid a second connection
 lifecycle and a second place authentication would eventually need adding —
@@ -153,18 +202,43 @@ confirm against the base Mini 3 specifically).
 
 ## Required behavior on the Android side
 
-- **Stale-command detection**: if no valid `flight_command` has arrived
-  within `staleCommandTimeoutMs` (default 1000ms), `BridgeServer`'s watchdog
-  forces a hover rather than continuing the last velocity indefinitely.
-- **Connection-loss detection**: if no message (including heartbeats) has
-  arrived within `connectionLossTimeoutMs` (default 3000ms), the watchdog
-  forces a hover. This bridge never disables or overrides the DJI
+Split between the transport (`BridgeServer`) and the app's DJI layer
+(`DjiCommandHandler`):
+
+- **Stale-command detection** (`DjiCommandHandler`): while a client is
+  connected, if no valid `flight_command` has arrived within
+  `staleCommandTimeoutMs` (default 1000ms), its watchdog forces a hover
+  rather than continuing the last velocity indefinitely. Heartbeats do not
+  count as commands.
+- **Connection-loss detection** (`BridgeServer`): if no message (including
+  heartbeats) has arrived within `connectionLossTimeoutMs` (default
+  3000ms), it calls `Handler.onLinkLost()` once, and `DjiCommandHandler`
+  hovers. A silent link also stops delivering commands, so the stale-command
+  hover covers it too. Nothing here disables or overrides the DJI
   firmware's own RC-signal-loss failsafe.
-- **Command validation**: `ProtocolCodec` rejects any `flight_command` with
-  a value outside `[-1.0, 1.0]` or non-finite (`NaN`/`Infinity`) before it
-  reaches `DjiVirtualStickController`.
-- **Safe default**: on client connect, on client disconnect, and on socket
-  error, `BridgeServer` forces a hover — never the last command received.
+- **Command validation** (`BridgeServer`, via `ProtocolCodec`): any
+  `flight_command` with a value outside `[-1.0, 1.0]` or non-finite
+  (`NaN`/`Infinity`) is rejected with a `false` ack and never handed to
+  the app.
+- **Safe default** (`DjiCommandHandler`): on client connect, on client
+  disconnect, and on socket error, the app forces a hover, never the last
+  command received.
+- **Takeoff and landing are left alone** (`DjiCommandHandler`): from a
+  `takeoff`/`land` until the next `flight_command` or `emergency_stop`, none
+  of the hovers above are sent. `app/main.py` stops sending commands after
+  asking to land, and hover inputs during DJI's auto-landing or takeoff
+  could cancel it.
+- **Audio**: `BridgeServer` hands each valid `say` to its `onSay` callback;
+  `MainActivity` passes them to `SpeechPlayer`, which speaks them with
+  Android text-to-speech, cutting off a `NORMAL` sentence for an `URGENT`
+  one and dropping stale `NORMAL` ones (`SpeechPolicy`). Written but not yet
+  run on a device. Still to build: the push-to-talk screen, which must call
+  `SpeechPlayer.stopSpeaking()` when pressed and
+  `BridgeServer.sendVoiceCommand()` when released. Audio messages never
+  affect flight; a failing speech callback is only logged.
+
+Building your own Android app against this protocol? See
+[BRIDGE_INTEGRATION.md](BRIDGE_INTEGRATION.md).
 
 ## What's still open
 

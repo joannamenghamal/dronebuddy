@@ -94,9 +94,10 @@ class DroneController(ABC):
 
     @abstractmethod
     def emergency_stop(self) -> None:
-        """Immediate motor cutoff / RTH-independent stop. Must not depend on
-        anything that could itself be in a failed state (e.g. the video
-        stream or the command channel)."""
+        """Immediate stop of all autonomous movement. This is not a motor
+        cutoff: the DJI bridge forces a hover (see DRONE_BRIDGE.md). Must not
+        depend on anything that could itself be in a failed state (e.g. the
+        video stream or the command channel)."""
         ...
 
     @abstractmethod
