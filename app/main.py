@@ -3,7 +3,7 @@ import logging
 
 import cv2
 
-from app.audio_output import AudioOutput
+from app.audio_output import AudioOutput, Priority
 from app.compute_actions import ComputeActions
 from app.config import load_config
 from app.control.follow_controller import describe_command, get_movement_command
@@ -147,7 +147,7 @@ def run(platform: str, source=None, muted=False, voice_script=None):
             if key == ord(" ") and safety.evaluate() != SafetyState.EMERGENCY_STOP:
                 safety.trigger_emergency_stop()
                 session_log.log("emergency_stop")
-                audio.say("Emergency stop")
+                audio.say("Emergency stop", Priority.URGENT)
     finally:
         if mic is not None:
             mic.stop()
