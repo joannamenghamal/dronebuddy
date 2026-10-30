@@ -129,3 +129,15 @@ def test_a_failing_backend_does_not_stop_later_alerts():
     audio.close()
 
     assert spoken_texts(backend) == ["boom", "still talking"]
+
+
+def test_repeat_comes_from_the_same_side_as_the_original():
+    backend = SilentSpeech()
+    audio = AudioOutput(backend=backend)
+
+    audio.say("Car on your left", pan=-0.7)
+    assert wait_until(lambda: audio.last_spoken == "Car on your left")
+    audio.repeat_last()
+    audio.close()
+
+    assert [u.pan for u in backend.spoken] == [-0.7, -0.7]

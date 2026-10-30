@@ -80,11 +80,12 @@ everything they ask goes through `VoiceControl`:
   answers every one out loud and logs it; `WHERE_IS` uses
   `ObjectLocator.find()`, which remembers every object seen in the last 30 s;
   `STOP_SESSION` ends the session like `q`.
-- **Phone link.** Two new bridge messages are proposed in
-  `app/bridge_messages.py`: `voice_command` (phone -> Python) and `say`
-  (Python -> phone). They are not in `DRONE_BRIDGE.md` yet: until they are
-  agreed and the Android app handles them, `BridgeSpeech` is unused and
-  `--voice-script` stands in for the mic.
+- **Phone link.** On `--drone dji` the audio rides the bridge: `BridgeSpeech`
+  sends `say` messages with `DJIController.send_message`, and `MicInput`
+  receives `voice_command` messages through `DJIController.add_message_handler`
+  (see `DRONE_BRIDGE.md`). On `--drone mock` the laptop speaks and only
+  `--voice-script` gives commands; `--mute` logs instead of speaking. The
+  Android side of both messages is not built yet.
 
 ## Why a SafetyManager sits between the controller and the follow-me logic
 
@@ -145,7 +146,8 @@ app/
   audio_output.py            # priority speech queue + backends (laptop, silent, phone bridge)
   voice_commands.py          # the voice commands shared with the phone app, FakeMic
   voice_control.py           # answers each voice command out loud
-  bridge_messages.py         # proposed voice_command / say bridge messages
+  mic_input.py               # voice commands from the phone, over the bridge
+  bridge_messages.py         # the voice_command / say bridge messages
   session_logger.py          # JSON Lines session log in logs/ for caregiver review
   webcam_source.py           # laptop camera / recorded clip for --drone mock
   control/

@@ -70,6 +70,10 @@ Each command is answered out loud and logged (`voice_command`,
 `voice_answer`); `STOP_SESSION` ends the session. Add `--mute` to log the
 answers instead of speaking them.
 
+On `--drone dji`, commands come from the phone instead (`MicInput`) and the
+phone speaks (`BridgeSpeech`); `tests/unit/test_dji_controller.py`
+exercises that round trip against the fake bridge.
+
 ## Ground-testing procedure before any real flight
 
 Only after the steps above pass:

@@ -27,6 +27,8 @@ exactly which spots those are and why.
 | `dji/DjiTelemetryProvider.kt` (battery/GPS/attitude) | Implemented, `DJIKey` identifiers confirmed via `javap` |
 | `dji/DjiFlightActions.kt` (takeoff/land) | Implemented — `KeyStartTakeoff`/`KeyStartAutoLanding` action-key calls, confirmed via `javap` |
 | `dji/DjiCameraStreamProvider.kt` (live video) | Implemented — `CameraStreamManager.addFrameListener`, confirmed via `javap`; JPEG-encodes and pushes frames as binary WebSocket messages on the same bridge connection. `ComponentIndexType.LEFT_OR_MAIN` and realistic frame rate/latency are UNVERIFIED on a physical Mini 3 — see `DRONE_BRIDGE.md` |
+| `audio/SpeechPlayer.kt`, `audio/SpeechPolicy.kt` (speaking `say` messages) | Written, **not yet built or run on a device**: Android `TextToSpeech` with `KEY_PARAM_PAN` / `KEY_PARAM_VOLUME`; URGENT cuts off NORMAL, stale NORMAL alerts dropped (`SpeechPolicy`, JVM-tested in `src/test`). `stopSpeaking()` is for the push-to-talk screen. Needs the `TTS_SERVICE` `<queries>` entry in the manifest (added) |
+| `say` / `voice_command` in `Protocol.kt` and `BridgeServer.kt` | Written, JVM-tested (`AudioProtocolTest`); `BridgeServer.sendVoiceCommand()` is ready for the push-to-talk screen, which is not built yet |
 | ProGuard rules | Best-effort keep rules, flagged unverified for 5.18.0 — can only be confirmed by actually running a release build |
 | `res/xml/accessory_filter.xml` | Placeholder — copy DJI's own sample's filter; genuinely needs the real sample project to confirm |
 | App launcher icon (`res/drawable/ic_launcher.xml`) | Placeholder vector drawable so the build doesn't depend on a missing asset — swap for real branding whenever, purely cosmetic |

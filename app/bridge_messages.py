@@ -6,8 +6,9 @@ the format can change in one place.
     Python -> phone:  {"type": "say", "text": "Chair ahead", "priority": "URGENT",
                        "pan": -0.6, "volume": 0.8}
 
-Not yet agreed with the bridge's owner, so DJIController does not send or receive them
-yet; see DRONE_BRIDGE.md for the messages that exist today."""
+Documented in DRONE_BRIDGE.md. Python side: BridgeSpeech sends "say" with
+DJIController.send_message; MicInput receives "voice_command" through
+DJIController.add_message_handler. The Android app's side is not built yet."""
 
 from typing import Optional
 
