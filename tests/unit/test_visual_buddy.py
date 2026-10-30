@@ -2,6 +2,7 @@
 announcements and user selection. No camera, model or drone needed."""
 import unittest
 
+from app.audio_output import Priority
 from app.compute_actions import ComputeActions
 from app.detection_module import Detection
 from app.object_locator import ObjectLocator
@@ -24,6 +25,10 @@ def person(track_id, center_x, height):
     """A person Detection centered at center_x, standing on the bottom of the frame."""
     width = height * 0.4
     return Detection("person", (center_x - width / 2, FRAME_H - height, center_x + width / 2, FRAME_H), track_id)
+
+
+def texts(alerts):
+    return [alert.text for alert in alerts]
 
 
 def confirm(tracking, clock, people):
@@ -87,13 +92,13 @@ class ComputeActionsTests(unittest.TestCase):
         actions = ComputeActions(cooldown_s=5, clock=clock)
 
         events = confirm(tracking, clock, [person(1, 100, 300)])
-        self.assertEqual(actions.compute(events), ["Person on your left"])
+        self.assertEqual(texts(actions.compute(events)), ["Person on your left"])
 
         ## Same event again within the cooldown is not repeated
         self.assertEqual(actions.compute(events), [])
 
         clock.now += 6
-        self.assertEqual(actions.compute(events), ["Person on your left"])
+        self.assertEqual(texts(actions.compute(events)), ["Person on your left"])
 
     def test_two_people_same_message_spoken_once(self):
         clock = FakeClock()
@@ -101,22 +106,92 @@ class ComputeActionsTests(unittest.TestCase):
         actions = ComputeActions(clock=clock)
 
         events = confirm(tracking, clock, [person(1, 640, 300), person(2, 660, 300)])
-        self.assertEqual(actions.compute(events), ["Person ahead"])
+        self.assertEqual(texts(actions.compute(events)), ["Person ahead"])
+
+    def test_approaching_is_urgent_and_comes_from_the_persons_side(self):
+        clock = FakeClock()
+        tracking = TrackingModule(clock)
+        actions = ComputeActions(clock=clock)
+
+        ## Confirmed on the right, then their box grows: approaching
+        confirm(tracking, clock, [person(1, 1100, 200)])
+        events = run_frames(tracking, clock, [[person(1, 1100, 200 + i * 15)] for i in range(20)])
+        approaching = [a for a in actions.compute(events) if a.text.startswith("Person approaching")]
+
+        self.assertEqual(len(approaching), 1)
+        self.assertEqual(approaching[0].priority, Priority.URGENT)
+        self.assertGreater(approaching[0].pan, 0.5)
+
+
+## The user, kept at the bottom-middle of the frame: 160 px wide, so the path runs
+## one body-width either side of them: x = 400 .. 880
+USER = Detection("person", (560, 360, 720, FRAME_H), 1)
 
 
 class ObjectLocatorTests(unittest.TestCase):
-    def test_only_close_objects_announced_once(self):
+    def test_only_objects_in_the_users_path_are_announced_nearest_first(self):
+        locator = ObjectLocator(cooldown_s=10, clock=FakeClock())
+
+        chair_ahead = Detection("chair", (600, 200, 700, 330))
+        bench_ahead_left = Detection("bench", (420, 250, 520, 340))   # nearer: lower in the frame
+        car_off_to_the_side = Detection("car", (0, 100, 300, 250))   # outside the path
+        bag_beside_the_user = Detection("backpack", (600, 650, 650, FRAME_H))  # not ahead of them
+        someone = Detection("person", (640, 100, 700, 300), 2)       # people go to the TrackingModule
+
+        detections = [chair_ahead, bench_ahead_left, car_off_to_the_side, bag_beside_the_user, someone]
+        result = locator.locate(detections, USER, FRAME_W, FRAME_H)
+
+        self.assertEqual([(label, message) for label, _, message, _ in result], [
+            ("bench", "bench ahead on your left"),
+            ("chair", "chair ahead"),
+        ])
+        self.assertLess(result[0][3], 0)  # the bench's sound comes from the left
+
+        ## Each kind of object only once per cooldown
+        self.assertEqual(locator.locate(detections, USER, FRAME_W, FRAME_H), [])
+
+    def test_objects_far_ahead_are_not_announced_but_find_still_knows_them(self):
+        locator = ObjectLocator(clock=FakeClock())
+
+        ## In the corridor, but its bottom edge is above the path's far edge (0.40 of the frame)
+        far_car = Detection("car", (600, 50, 700, 200))
+
+        self.assertEqual(locator.locate([far_car], USER, FRAME_W, FRAME_H), [])
+        self.assertEqual(locator.find("car"), "Car ahead")
+
+    def test_without_the_user_in_view_the_middle_third_is_the_path(self):
+        locator = ObjectLocator(clock=FakeClock())
+
+        result = locator.locate([Detection("chair", (500, 300, 700, 500)), Detection("car", (0, 100, 300, 250))],
+                                None, FRAME_W, FRAME_H)
+
+        self.assertEqual([message for _, _, message, _ in result], ["chair ahead"])
+
+    def test_find_answers_for_any_object_seen_anywhere_in_view(self):
         clock = FakeClock()
-        locator = ObjectLocator(cooldown_s=10, clock=clock)
+        locator = ObjectLocator(clock=clock)
 
-        near_chair = Detection("chair", (1000, 300, 1250, 700))  # 400px tall = 0.56 of frame
-        far_cup = Detection("cup", (600, 300, 620, 330))
-        someone = Detection("person", (0, 0, 640, 720), 1)
+        locator.locate([Detection("car", (0, 100, 300, 250))], USER, FRAME_W, FRAME_H)  # not in the path
 
-        result = locator.locate([near_chair, far_cup, someone], FRAME_W, FRAME_H)
-        self.assertEqual(result, [("chair", "on your right", "chair on your right")])
+        self.assertEqual(locator.find("Car"), "Car on your left")
+        self.assertLess(locator.pan_of("car"), 0)
+        self.assertEqual(locator.find("cup"), "I don't see a cup")
+        self.assertEqual(locator.find("umbrella"), "I don't see an umbrella")
 
-        self.assertEqual(locator.locate([near_chair], FRAME_W, FRAME_H), [])
+        clock.now = 5
+        self.assertEqual(locator.find("car"), "Car on your left, seen 5 seconds ago")
+
+        clock.now = 31
+        self.assertEqual(locator.find("car"), "I don't see a car")
+
+    def test_find_remembers_the_nearest_one_described_like_the_alerts(self):
+        locator = ObjectLocator(clock=FakeClock())
+
+        far_car_left = Detection("car", (0, 100, 300, 250))
+        near_car_ahead = Detection("car", (600, 300, 700, 340))
+        locator.locate([near_car_ahead, far_car_left], USER, FRAME_W, FRAME_H)
+
+        self.assertEqual(locator.find("car"), "Car ahead")
 
 
 class UserSelectionTests(unittest.TestCase):

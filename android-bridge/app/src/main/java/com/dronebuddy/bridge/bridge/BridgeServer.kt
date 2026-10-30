@@ -32,11 +32,15 @@ import kotlin.concurrent.thread
  * again to notice a client that simply stopped sending. Every inbound
  * flight_command is validated by ProtocolCodec before it is handed on, so
  * malformed input never reaches the app.
+ *
+ * Audio (`say` in, `voice_command` out) is passed through to the app and never
+ * touches flight: a failing speech callback is logged and nothing else changes.
  */
 class BridgeServer(
     port: Int,
     private val handler: Handler,
     private val connectionLossTimeoutMs: Long = 3000L,
+    private val onSay: (BridgeMessage.Say) -> Unit = {},
 ) : WebSocketServer(InetSocketAddress(port)) {
 
     /**
@@ -112,6 +116,7 @@ class BridgeServer(
             "land" -> handler.onLand { ok, detail ->
                 sendQuietly(conn, ProtocolCodec.encodeAck(BridgeMessage.Ack("land", ok, detail)))
             }
+            "say" -> handleSay(json)
             else -> Log.w(TAG, "unknown message type, ignoring")
         }
     }
@@ -129,6 +134,32 @@ class BridgeServer(
         }
         handler.onFlightCommand(cmd)
         sendQuietly(conn, ProtocolCodec.encodeAck(BridgeMessage.Ack("flight_command", true)))
+    }
+
+    /** No ack: a missed sentence is simply replaced by the next alert. */
+    private fun handleSay(json: JSONObject) {
+        val say = ProtocolCodec.decodeSay(json)
+        if (say == null) {
+            Log.w(TAG, "malformed say, ignoring")
+            return
+        }
+        try {
+            onSay(say)
+        } catch (e: Exception) {
+            Log.e(TAG, "speaking failed", e)
+        }
+    }
+
+    /** For the push-to-talk screen. False if there's no Python client or the command is unknown. */
+    fun sendVoiceCommand(command: BridgeMessage.VoiceCommand): Boolean {
+        val encoded = ProtocolCodec.encodeVoiceCommand(command) ?: return false
+        val client = activeClient ?: return false
+        return try {
+            client.send(encoded)
+            true
+        } catch (e: WebsocketNotConnectedException) {
+            false
+        }
     }
 
     override fun onError(conn: WebSocket?, ex: Exception) {

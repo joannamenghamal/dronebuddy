@@ -114,8 +114,8 @@ def analyze(path, snapshots):
         for event in events:
             timeline.append((seconds, "activity", f"person #{event.track_id}: {event.activity}"))
         for alert in actions.compute(events):
-            timeline.append((seconds, "SPEAK", alert))
-        for _, _, message in locator.locate(detections, width, height):
+            timeline.append((seconds, "SPEAK", f"{alert.text} ({alert.priority.name})"))
+        for _, _, message, _ in locator.locate(detections, user, width, height):
             timeline.append((seconds, "SPEAK", message))
 
         ## No drone here - pretend telemetry is live so only the follow logic decides
