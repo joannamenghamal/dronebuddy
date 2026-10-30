@@ -24,6 +24,8 @@ from app.person_tracker import (
 from app.safety.safety_manager import SafetyAction, SafetyManager, SafetyState
 from app.session_logger import SessionLogger
 from app.tracking_module import TrackingModule
+from app.voice_commands import FakeMic, parse_script
+from app.voice_control import VoiceControl
 from app.webcam_source import WebcamSource
 
 logger = logging.getLogger("dronebuddy.main")
@@ -51,7 +53,7 @@ def build_drone(platform: str, source=None) -> DroneController:
     raise ValueError(f"unknown drone platform: {platform!r}")
 
 
-def run(platform: str, source=None, muted=False):
+def run(platform: str, source=None, muted=False, voice_script=None):
     config = load_config()
     model = load_model(WEIGHTS_PATH)
     safety = SafetyManager(config)
@@ -61,6 +63,11 @@ def run(platform: str, source=None, muted=False):
     locator = ObjectLocator()
     audio = AudioOutput(muted=muted)
     session_log = SessionLogger()
+    voice = VoiceControl(audio, locator, session_log)
+
+    ## Voice commands come from push-to-talk on the user's phone. Until the phone app
+    ## sends them over the bridge, --voice-script stands in with scripted commands.
+    mic = FakeMic(parse_script(voice_script)) if voice_script else None
 
     drone = build_drone(platform, source)
     drone.connect()
@@ -70,6 +77,8 @@ def run(platform: str, source=None, muted=False):
 
     session_log.log("session_start", platform=platform, source=source)
     audio.say("Visual Buddy ready")
+    if mic is not None:
+        mic.start()
 
     try:
         while True:
@@ -112,6 +121,15 @@ def run(platform: str, source=None, muted=False):
                 session_log.log("object_alert", label=label, position=position)
                 audio.say(message, pan=pan)
 
+            ## Voice commands: answered out loud; STOP_SESSION ends the session like 'q'
+            stop_requested = False
+            if mic is not None:
+                for voice_command in mic.poll():
+                    if not voice.handle(voice_command):
+                        stop_requested = True
+            if stop_requested:
+                break
+
             ## Drone follow: keep the user at the bottom-middle of the frame.
             ## Every command goes through the safety manager before it can reach the drone
             safety.note_person_visible(user is not None)
@@ -131,6 +149,9 @@ def run(platform: str, source=None, muted=False):
                 session_log.log("emergency_stop")
                 audio.say("Emergency stop")
     finally:
+        if mic is not None:
+            mic.stop()
+
         ## Release camera, close windows, save the log and confirm to the user
         drone.stop_video_stream()
         drone.disconnect()
@@ -283,10 +304,16 @@ def parse_args():
         action="store_true",
         help="Log spoken alerts instead of saying them out loud.",
     )
+    parser.add_argument(
+        "--voice-script",
+        default=None,
+        help="Scripted voice commands until the phone mic is connected: "
+        "comma-separated seconds:COMMAND[:argument], e.g. \"4:WHERE_IS:car, 9:REPEAT, 15:STOP_SESSION\".",
+    )
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     configure_logging()
     args = parse_args()
-    run(args.drone, parse_source(args.source), args.mute)
+    run(args.drone, parse_source(args.source), args.mute, args.voice_script)

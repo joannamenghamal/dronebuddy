@@ -58,6 +58,34 @@ Run with `python3 -m app.main --drone mock` (no hardware) or `--drone dji`
 (real Mini 3, once the bridge app is running and `BRIDGE_HOST` points at
 it — see [android-bridge/README.md](android-bridge/README.md)).
 
+## Audio and voice
+
+Everything the visually impaired user hears comes from `AudioOutput`, and
+everything they ask goes through `VoiceControl`:
+
+- **Alerts.** `ComputeActions` turns other people's activity into `Alert`s;
+  "Person approaching" is `URGENT`. `ObjectLocator` announces objects in the
+  user's path only: their own width plus one body-width on each side, ahead
+  of them, and no farther than 0.40 of the way down the frame (the line the
+  drone holds the user's head on). With no user in view, the path is the
+  middle third of the frame.
+- **Speaking.** `AudioOutput` keeps a short priority queue on a background
+  thread: `URGENT` goes ahead of `NORMAL`, and when speech falls behind the
+  oldest `NORMAL` alert is dropped. Every alert carries a `pan` (-1 left ear
+  .. +1 right ear). The words come out of a backend: `LocalSpeech` (laptop
+  speakers), `SilentSpeech` (`--mute`, tests) or `BridgeSpeech` (the phone).
+- **Voice commands** (`app/voice_commands.py`): `START_SESSION`,
+  `STOP_SESSION`, `WHERE_IS <object>`, `REPEAT`, `LOUDER`, `QUIETER`. The
+  phone recognizes them while its push-to-talk screen is held. `VoiceControl`
+  answers every one out loud and logs it; `WHERE_IS` uses
+  `ObjectLocator.find()`, which remembers every object seen in the last 30 s;
+  `STOP_SESSION` ends the session like `q`.
+- **Phone link.** Two new bridge messages are proposed in
+  `app/bridge_messages.py`: `voice_command` (phone -> Python) and `say`
+  (Python -> phone). They are not in `DRONE_BRIDGE.md` yet: until they are
+  agreed and the Android app handles them, `BridgeSpeech` is unused and
+  `--voice-script` stands in for the mic.
+
 ## Why a SafetyManager sits between the controller and the follow-me logic
 
 The follow-me controller only knows about the person it's tracking; it has
@@ -113,8 +141,11 @@ app/
   person_tracker.py          # user selection, horizontal error, head-position distance
   tracking_module.py         # per-person activity (NEW / APPROACHING / LEFT FRAME ...)
   compute_actions.py         # which activities become spoken alerts, with cooldowns
-  object_locator.py          # "chair on your left" announcements for nearby objects
-  audio_output.py            # offline text-to-speech on a background thread
+  object_locator.py          # objects in the user's path ("chair ahead"); find() for WHERE_IS
+  audio_output.py            # priority speech queue + backends (laptop, silent, phone bridge)
+  voice_commands.py          # the voice commands shared with the phone app, FakeMic
+  voice_control.py           # answers each voice command out loud
+  bridge_messages.py         # proposed voice_command / say bridge messages
   session_logger.py          # JSON Lines session log in logs/ for caregiver review
   webcam_source.py           # laptop camera / recorded clip for --drone mock
   control/

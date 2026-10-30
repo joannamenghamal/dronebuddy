@@ -56,6 +56,20 @@ Runs the full detection -> tracking -> follow -> safety -> drone loop against
 detections but never sending a command anywhere near real hardware. This is
 the first thing to run after any change to the follow-me or safety logic.
 
+## Voice commands without the phone
+
+Until the phone app sends voice commands, `--voice-script` plays scripted
+ones at set seconds after start (`FakeMic`):
+
+```bash
+python -m app.main --drone mock --source videos/clip2.mp4 \
+    --voice-script "4:WHERE_IS:car, 8:QUIETER, 10:REPEAT, 14:STOP_SESSION"
+```
+
+Each command is answered out loud and logged (`voice_command`,
+`voice_answer`); `STOP_SESSION` ends the session. Add `--mute` to log the
+answers instead of speaking them.
+
 ## Ground-testing procedure before any real flight
 
 Only after the steps above pass:
