@@ -3,7 +3,7 @@ import json
 import logging
 import threading
 import time
-from typing import Optional
+from typing import Callable, Optional
 
 import cv2
 import numpy as np
@@ -51,6 +51,7 @@ class DJIController(DroneController):
         self._telemetry = Telemetry()
         self._pending_acks: dict = {}
         self._latest_frame: Optional[np.ndarray] = None
+        self._message_handlers: dict = {}  # message type -> handlers, for messages other parts of the app own
 
     def connect(self) -> None:
         if self._thread is not None:
@@ -134,6 +135,12 @@ class DJIController(DroneController):
             self._update_telemetry(msg)
         elif msg_type == "ack":
             self._resolve_ack(msg)
+        elif msg_type in self._message_handlers:
+            for handler in self._message_handlers[msg_type]:
+                try:
+                    handler(msg)
+                except Exception:
+                    logger.exception("handler for bridge message type=%r failed", msg_type)
         else:
             logger.debug("unhandled bridge message type=%r", msg_type)
 
@@ -160,6 +167,20 @@ class DJIController(DroneController):
         future = self._pending_acks.pop(msg.get("for_type"), None)
         if future is not None and not future.done():
             future.set_result(msg)
+
+    def add_message_handler(self, msg_type: str, handler: Callable[[dict], None]) -> None:
+        """Calls handler(message) for every incoming message of msg_type, for message
+        types other parts of the app own (e.g. "voice_command" for the audio).
+        Handlers run on the bridge's own thread, so they must be quick and thread-safe;
+        register them before connect() so no early message is missed."""
+        self._message_handlers.setdefault(msg_type, []).append(handler)
+
+    def send_message(self, payload: dict) -> None:
+        """Fire-and-forget send of a message other parts of the app own (e.g. "say"
+        for the audio). Raises ConnectionError if the bridge isn't connected."""
+        if "type" not in payload:
+            raise ValueError("bridge messages need a 'type'")
+        self._send(payload)
 
     def _send(self, payload: dict) -> None:
         if self._loop is None or self._ws is None:
