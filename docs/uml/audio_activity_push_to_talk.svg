@@ -65,5 +65,5 @@
 <polyline points="650.0,839.0 650.0,890.0 380.0,890.0" fill="none" stroke="#b44d12" stroke-width="1.4" marker-end="url(#open)"/>
 <polyline points="230.0,867.0 230.0,861.0 426.0,861.0 426.0,194.0 270.0,194.0 270.0,201.0" fill="none" stroke="#1f2933" stroke-width="1.4" marker-end="url(#open)"/>
 <text x="418.0" y="853.0" font-size="11.5" text-anchor="end" fill="#52606d" font-style="italic" xml:space="preserve">back to waiting</text>
-<text x="20.0" y="1030.0" font-size="11.5" text-anchor="start" fill="#b44d12" xml:space="preserve">Orange: the bridge messages, not built yet; until then --voice-script and the laptop speaker stand in.</text>
+<text x="20.0" y="1030.0" font-size="11.5" text-anchor="start" fill="#b44d12" xml:space="preserve">Orange: the bridge messages. The phone app&#x27;s side is not built yet; until then --voice-script and the laptop speaker stand in.</text>
 </svg>

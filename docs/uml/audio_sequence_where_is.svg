@@ -15,7 +15,7 @@
   </marker>
 </defs>
 <text x="20.0" y="34.0" font-size="22" text-anchor="start" fill="#1f2933" font-weight="bold" xml:space="preserve">“Where is my cup?”: UML sequence diagram</text>
-<text x="20.0" y="56.0" font-size="12.5" text-anchor="start" fill="#52606d" xml:space="preserve">From holding the phone&#x27;s screen to the answer in the user&#x27;s ear. Orange: the two proposed bridge messages.</text>
+<text x="20.0" y="56.0" font-size="12.5" text-anchor="start" fill="#52606d" xml:space="preserve">From holding the phone&#x27;s screen to the answer in the user&#x27;s ear. Orange: the two bridge messages.</text>
 <rect x="28.0" y="90.0" width="164.0" height="36.0" rx="6" fill="#eef0f3" stroke="#1f2933" stroke-width="1.4"/>
 <text x="110.0" y="112.0" font-size="13" text-anchor="middle" fill="#1f2933" font-weight="bold" xml:space="preserve">User</text>
 <polyline points="110.0,136.0 110.0,780.0" fill="none" stroke="#9aa5b1" stroke-width="1.2" stroke-dasharray="7,5"/>
@@ -23,8 +23,9 @@
 <text x="315.0" y="112.0" font-size="13" text-anchor="middle" fill="#1f2933" font-weight="bold" xml:space="preserve">Phone app</text>
 <text x="315.0" y="128.0" font-size="11" text-anchor="middle" fill="#52606d" xml:space="preserve">push-to-talk + speech-to-text</text>
 <polyline points="315.0,136.0 315.0,780.0" fill="none" stroke="#9aa5b1" stroke-width="1.2" stroke-dasharray="7,5"/>
-<rect x="438.0" y="90.0" width="164.0" height="36.0" rx="6" fill="#eef0f3" stroke="#1f2933" stroke-width="1.4"/>
+<rect x="438.0" y="90.0" width="164.0" height="46.0" rx="6" fill="#eef0f3" stroke="#1f2933" stroke-width="1.4"/>
 <text x="520.0" y="112.0" font-size="13" text-anchor="middle" fill="#1f2933" font-weight="bold" xml:space="preserve">main loop</text>
+<text x="520.0" y="128.0" font-size="11" text-anchor="middle" fill="#52606d" xml:space="preserve">+ MicInput</text>
 <polyline points="520.0,136.0 520.0,780.0" fill="none" stroke="#9aa5b1" stroke-width="1.2" stroke-dasharray="7,5"/>
 <rect x="643.0" y="90.0" width="164.0" height="36.0" rx="6" fill="#dde7f5" stroke="#1f2933" stroke-width="1.4"/>
 <text x="725.0" y="112.0" font-size="13" text-anchor="middle" fill="#1f2933" font-weight="bold" xml:space="preserve">VoiceControl</text>
@@ -61,6 +62,6 @@
 <polyline points="315.0,692.0 114.0,692.0" fill="none" stroke="#1f2933" stroke-width="1.4" stroke-dasharray="7,5" marker-end="url(#open)"/>
 <text x="212.5" y="684.0" font-size="12.5" text-anchor="middle" fill="#1f2933" xml:space="preserve">speaks it, in the left ear</text>
 <rect x="20.0" y="800.0" width="1265.0" height="50.0" rx="6" fill="#fff7ed" stroke="#b44d12" stroke-width="1.4" stroke-dasharray="6,4"/>
-<text x="36.0" y="821.0" font-size="12.5" text-anchor="start" fill="#1f2933" xml:space="preserve">Today, until the bridge messages are agreed: --voice-script stands in for the phone&#x27;s voice_command,</text>
-<text x="36.0" y="839.0" font-size="12.5" text-anchor="start" fill="#1f2933" xml:space="preserve">and the laptop speaks the answer instead of the phone. Everything between them runs as drawn.</text>
+<text x="36.0" y="821.0" font-size="12.5" text-anchor="start" fill="#1f2933" xml:space="preserve">Python&#x27;s side of both bridge messages is built. Until the phone app handles them, test with --drone mock:</text>
+<text x="36.0" y="839.0" font-size="12.5" text-anchor="start" fill="#1f2933" xml:space="preserve">--voice-script stands in for the phone&#x27;s voice_command, and the laptop speaks the answer.</text>
 </svg>

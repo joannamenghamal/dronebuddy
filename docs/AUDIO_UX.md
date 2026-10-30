@@ -72,9 +72,13 @@ only in the path, and the answer comes from that object's side.
 
 ## Not built yet
 
-- The phone speaking: Android text-to-speech for the `say` bridge message,
-  cutting off for URGENT, stereo and tones. Until then the laptop speaks
-  (`--drone mock`), in mono.
-- The phone's push-to-talk screen and speech recognition, sending
-  `voice_command` messages. Until then `--voice-script` stands in.
-- Both bridge messages (`app/bridge_messages.py`) are proposed, not yet agreed.
+The Python side is connected: on `--drone dji` alerts go to the phone as
+`say` messages and commands come from it as `voice_command` messages (see
+`DRONE_BRIDGE.md`). What's missing is the Android app's side:
+
+- Speaking `say` messages with Android text-to-speech, cutting off for
+  URGENT, stereo from `pan`, and tones.
+- The push-to-talk screen and speech recognition that send `voice_command`.
+
+Until then, test with `--drone mock`: the laptop speaks, in mono, and
+`--voice-script` stands in for the user's commands.

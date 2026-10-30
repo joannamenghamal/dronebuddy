@@ -97,6 +97,8 @@ class FakeBridge:
         asyncio.run_coroutine_threadsafe(ws.send(json.dumps(payload)), self._loop).result(timeout=2.0)
 
     def push_message(self, payload):
+        ## connect() can return before the server side has registered the connection
+        _wait_until(lambda: self._ws is not None)
         with self._lock:
             ws = self._ws
         asyncio.run_coroutine_threadsafe(ws.send(json.dumps(payload)), self._loop).result(timeout=2.0)
@@ -299,4 +301,32 @@ def test_a_failing_handler_does_not_stop_the_bridge(bridge):
         bridge.push_telemetry(battery=55, connected=True)
         _wait_until(lambda: d.get_battery() == 55)
     finally:
+        d.disconnect()
+
+
+def test_audio_round_trip_over_the_bridge(bridge):
+    """The phone's voice_command reaches MicInput, and AudioOutput's answer goes back
+    to the phone as a say message, all through the real DJIController socket."""
+    from app.audio_output import AudioOutput, BridgeSpeech, Priority
+    from app.mic_input import MicInput
+    from app.voice_commands import CommandType
+
+    d = DJIController("127.0.0.1", bridge.port)
+    mic = MicInput(d)
+    audio = AudioOutput(backend=BridgeSpeech(d.send_message))
+    d.connect()
+    try:
+        mic.start()
+        bridge.push_message({"type": "voice_command", "command": "WHERE_IS", "argument": "cup", "confidence": 0.9})
+        commands = []
+        _wait_until(lambda: commands.extend(mic.poll()) or commands)
+        assert commands[0].type == CommandType.WHERE_IS and commands[0].argument == "cup"
+
+        audio.say("Cup on your left", Priority.URGENT, pan=-0.7)
+        _wait_until(lambda: bridge.received_of_type("say"))
+        assert bridge.received_of_type("say")[0] == {
+            "type": "say", "text": "Cup on your left", "priority": "URGENT", "pan": -0.7, "volume": 1.0,
+        }
+    finally:
+        audio.close()
         d.disconnect()

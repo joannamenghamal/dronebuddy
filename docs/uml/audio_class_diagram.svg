@@ -193,8 +193,8 @@
 <text x="1684.0" y="706.0" font-size="13" text-anchor="start" fill="#1f2933" xml:space="preserve">    pan, volume): dict</text>
 <text x="1684.0" y="724.0" font-size="13" text-anchor="start" fill="#1f2933" xml:space="preserve">+ parse_voice_command(message):</text>
 <text x="1684.0" y="742.0" font-size="13" text-anchor="start" fill="#1f2933" xml:space="preserve">    VoiceCommand</text>
-<text x="1684.0" y="760.0" font-size="13" text-anchor="start" fill="#b44d12" font-style="italic" xml:space="preserve">Proposed; not in DRONE_BRIDGE.md</text>
-<text x="1684.0" y="778.0" font-size="13" text-anchor="start" fill="#1f2933" xml:space="preserve">    yet</text>
+<text x="1684.0" y="760.0" font-size="13" text-anchor="start" fill="#1f2933" font-style="italic" xml:space="preserve">Sent / received through</text>
+<text x="1684.0" y="778.0" font-size="13" text-anchor="start" fill="#1f2933" xml:space="preserve">    DJIController</text>
 <rect x="296.0" y="866.0" width="250.0" height="72.0" rx="0" fill="#fff" stroke="#1f2933" stroke-width="1.4"/>
 <rect x="296.0" y="866.0" width="250.0" height="46.0" rx="0" fill="#eef0f3" stroke="#1f2933" stroke-width="1.4"/>
 <text x="421.0" y="884.0" font-size="11.5" text-anchor="middle" fill="#1f2933" font-style="italic" xml:space="preserve">«enum»</text>

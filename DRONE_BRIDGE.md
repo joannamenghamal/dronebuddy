@@ -127,6 +127,34 @@ and `land`. `ok: false` carries a `detail` string when Android rejects or
 fails a command (validation failure, or an `IDJIError` from the SDK for
 `takeoff`/`land`).
 
+### `voice_command` (Android -> Python)
+
+```json
+{"type": "voice_command", "command": "WHERE_IS", "argument": "cup", "heard": "where is my mug", "confidence": 0.82}
+```
+
+The visually impaired user's spoken command, recognized on the phone while
+its full-screen push-to-talk button is held. `command` is one of
+`START_SESSION`, `STOP_SESSION`, `WHERE_IS`, `REPEAT`, `LOUDER`, `QUIETER`
+(`app/voice_commands.py`); `argument` is a YOLO class name for `WHERE_IS`
+(the app maps "mug" to `cup`), else `null`; `heard` is the raw speech-to-text
+for the session log. No ack. Python side: `MicInput` (registered with
+`DJIController.add_message_handler`) ignores unknown commands and anything
+below 0.5 `confidence`.
+
+### `say` (Python -> Android)
+
+```json
+{"type": "say", "text": "Chair ahead", "priority": "URGENT", "pan": -0.6, "volume": 0.8}
+```
+
+Something to speak to the user with the phone's text-to-speech. `priority`
+is `NORMAL` or `URGENT`; an `URGENT` one cuts off a `NORMAL` one already
+playing. `pan` is -1.0 (left ear) .. +1.0 (right ear); `volume` is 0.0 ..
+1.0. No ack: a missed sentence is replaced by the next alert. Python side:
+`BridgeSpeech`, sent with `DJIController.send_message`. Both audio messages
+are built and parsed in `app/bridge_messages.py`.
+
 ### Video (Android -> Python)
 
 Raw binary WebSocket frames — JPEG bytes, no JSON envelope — interleaved on
@@ -165,6 +193,10 @@ confirm against the base Mini 3 specifically).
   reaches `DjiVirtualStickController`.
 - **Safe default**: on client connect, on client disconnect, and on socket
   error, `BridgeServer` forces a hover — never the last command received.
+- **Audio** (not built yet): speak each `say` with Android text-to-speech,
+  cutting off a `NORMAL` sentence for an `URGENT` one; stop speaking the
+  moment the push-to-talk screen is pressed; send `voice_command` when it's
+  released. Audio messages never affect flight.
 
 ## What's still open
 

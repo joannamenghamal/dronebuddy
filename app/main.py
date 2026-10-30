@@ -3,7 +3,7 @@ import logging
 
 import cv2
 
-from app.audio_output import AudioOutput, Priority
+from app.audio_output import AudioOutput, BridgeSpeech, LocalSpeech, Priority, SilentSpeech
 from app.compute_actions import ComputeActions
 from app.config import load_config
 from app.control.follow_controller import describe_command, get_movement_command
@@ -11,6 +11,7 @@ from app.detection_module import PERSON_LABEL, detect_objects, load_model
 from app.drone.controller import HOVER, DroneController
 from app.drone.mock_controller import MockDroneController
 from app.logging_setup import configure_logging
+from app.mic_input import MicInput
 from app.object_locator import ObjectLocator
 from app.person_tracker import (
     TARGET_HEAD_RATIO,
@@ -58,18 +59,17 @@ def run(platform: str, source=None, muted=False, voice_script=None):
     model = load_model(WEIGHTS_PATH)
     safety = SafetyManager(config)
 
+    drone = build_drone(platform, source)
+
     tracking = TrackingModule()
     actions = ComputeActions()
     locator = ObjectLocator()
-    audio = AudioOutput(muted=muted)
+    audio = AudioOutput(backend=build_speech(platform, drone, muted))
     session_log = SessionLogger()
     voice = VoiceControl(audio, locator, session_log)
+    ## Created before connect() so no command sent right after connecting is lost
+    mic = build_mic(platform, drone, voice_script)
 
-    ## Voice commands come from push-to-talk on the user's phone. Until the phone app
-    ## sends them over the bridge, --voice-script stands in with scripted commands.
-    mic = FakeMic(parse_script(voice_script)) if voice_script else None
-
-    drone = build_drone(platform, source)
     drone.connect()
     drone.start_video_stream()
 
@@ -152,7 +152,12 @@ def run(platform: str, source=None, muted=False, voice_script=None):
         if mic is not None:
             mic.stop()
 
-        ## Release camera, close windows, save the log and confirm to the user
+        ## Confirm to the user first: on --drone dji the phone speaks it, so it has to
+        ## go out before the bridge disconnects
+        audio.say("Session ended")
+        audio.close()
+
+        ## Release camera, close windows, save the log
         drone.stop_video_stream()
         drone.disconnect()
         cv2.destroyAllWindows()
@@ -160,8 +165,26 @@ def run(platform: str, source=None, muted=False, voice_script=None):
         log_path = session_log.close()
         logger.info("session log saved to %s", log_path)
 
-        audio.say("Session ended")
-        audio.close()
+
+def build_speech(platform, drone, muted):
+    """Where alerts are spoken: the user's phone on --drone dji (over the bridge), the
+    laptop speakers on --drone mock, nowhere with --mute (logged only)."""
+    if muted:
+        return SilentSpeech()
+    if platform == "dji":
+        return BridgeSpeech(drone.send_message)
+    return LocalSpeech()
+
+
+def build_mic(platform, drone, voice_script):
+    """Where voice commands come from: --voice-script if given (scripted, for testing
+    without the phone), else push-to-talk on the phone over the bridge on --drone dji.
+    --drone mock has no phone, so no voice commands unless scripted."""
+    if voice_script:
+        return FakeMic(parse_script(voice_script))
+    if platform == "dji":
+        return MicInput(drone)
+    return None
 
 
 def apply_safety_decision(drone: DroneController, safety: SafetyManager, decision) -> None:

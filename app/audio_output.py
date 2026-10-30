@@ -87,6 +87,7 @@ class AudioOutput:
         self.backend = backend or (SilentSpeech() if muted else LocalSpeech(rate))
         self.volume = 1.0
         self.last_spoken = None
+        self.last_pan = 0.0
         self.pending = []  # Utterances waiting, in the order they will be spoken
         self.closing = False
         self.condition = threading.Condition()
@@ -116,7 +117,7 @@ class AudioOutput:
         "Louder". False if there is nothing to repeat yet."""
         if self.last_spoken is None:
             return False
-        self.say(self.last_spoken, Priority.URGENT)
+        self.say(self.last_spoken, Priority.URGENT, self.last_pan)
         return True
 
     def change_volume(self, step) -> float:
@@ -143,6 +144,7 @@ class AudioOutput:
             logger.info("say %r (%s, pan %+.1f)", utterance.text, utterance.priority.name, utterance.pan)
             if utterance.repeatable:
                 self.last_spoken = utterance.text
+                self.last_pan = utterance.pan
             try:
                 self.backend.speak(utterance)
             except Exception:

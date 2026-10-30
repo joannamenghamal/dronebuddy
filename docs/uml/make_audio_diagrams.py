@@ -177,7 +177,7 @@ CLASSES = {
     "bridge": ("module", "bridge_messages", HEADER_VOICE, [], [
         "+ say_message(text, priority, pan, volume): dict",
         "+ parse_voice_command(message): VoiceCommand",
-        "Proposed; not in DRONE_BRIDGE.md yet",
+        "Sent / received through DJIController",
     ]),
     "priority": ("enum", "Priority", HEADER_DATA, [
         "NORMAL | URGENT",
@@ -353,14 +353,14 @@ def class_diagram():
 
 def sequence_diagram():
     lifelines = [("user", "User", None), ("phone", "Phone app", "push-to-talk + speech-to-text"),
-                 ("main", "main loop", None), ("voice", "VoiceControl", None),
+                 ("main", "main loop", "+ MicInput"), ("voice", "VoiceControl", None),
                  ("locator", "ObjectLocator", None), ("audio", "AudioOutput", "+ BridgeSpeech")]
     spacing, left = 205, 110
     x = {key: left + i * spacing for i, (key, _, _) in enumerate(lifelines)}
     width = x["audio"] + 170
     top = 90
     parts = [text(20, 34, "“Where is my cup?”: UML sequence diagram", size=22, weight="bold"),
-             text(20, 56, "From holding the phone's screen to the answer in the user's ear. Orange: the two proposed bridge messages.", size=12.5, fill=MUTED)]
+             text(20, 56, "From holding the phone's screen to the answer in the user's ear. Orange: the two bridge messages.", size=12.5, fill=MUTED)]
 
     messages = [
         # (kind, from, to, label, note)
@@ -412,8 +412,8 @@ def sequence_diagram():
 
     note_y = bottom + 20
     parts.append(rect(20, note_y, width - 40, 50, fill="#fff7ed", stroke=PLANNED, rx=6, dashed=True))
-    parts.append(text(36, note_y + 21, "Today, until the bridge messages are agreed: --voice-script stands in for the phone's voice_command,", size=12.5))
-    parts.append(text(36, note_y + 39, "and the laptop speaks the answer instead of the phone. Everything between them runs as drawn.", size=12.5))
+    parts.append(text(36, note_y + 21, "Python's side of both bridge messages is built. Until the phone app handles them, test with --drone mock:", size=12.5))
+    parts.append(text(36, note_y + 39, "--voice-script stands in for the phone's voice_command, and the laptop speaks the answer.", size=12.5))
     height = note_y + 70
     svg = svg_document(width, height, parts)
     save(UML_DIR, "audio_sequence_where_is.svg", svg, width, height)
@@ -499,7 +499,7 @@ def activity_diagram():
                        (loop_x, ys["wait"] - 30), (pc + 40, ys["wait"] - 30), (pc + 40, ys["wait"] - bh / 2)]))
     parts.append(text(loop_x - 8, ys["speak"] - bh / 2 - 14, "back to waiting", anchor="end", size=11.5, style="italic", fill=MUTED))
 
-    parts.append(text(20, height - 4, "Orange: the bridge messages, not built yet; until then --voice-script and the laptop speaker stand in.", size=11.5, fill=PLANNED))
+    parts.append(text(20, height - 4, "Orange: the bridge messages. The phone app's side is not built yet; until then --voice-script and the laptop speaker stand in.", size=11.5, fill=PLANNED))
     svg = svg_document(width, height + 10, parts)
     save(UML_DIR, "audio_activity_push_to_talk.svg", svg, width, height + 10)
 
