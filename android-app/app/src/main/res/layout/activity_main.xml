@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawerLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context=".MainActivity"
+    tools:openDrawer="end">
+
+    <!-- Main Page -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#F5F5F5"
+        android:fitsSystemWindows="true">
+
+        <!-- Persistent Top Bar -->
+        <LinearLayout
+            android:id="@+id/topBar"
+            android:layout_width="0dp"
+            android:layout_height="56dp"
+            android:background="#2196F3"
+            android:elevation="4dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageButton
+                android:id="@+id/btnMenu"
+                android:layout_width="56dp"
+                android:layout_height="match_parent"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Open navigation menu"
+                android:src="@android:drawable/ic_menu_sort_by_size"
+                app:tint="#FFFFFF" />
+
+            <TextView
+                android:id="@+id/tvToolbarTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Home"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <!-- Screen Content: fragments replace this area -->
+        <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/mainFragmentContainerView"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/topBar" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Persistent Sidebar -->
+    <LinearLayout
+        android:id="@+id/sideBar"
+        android:layout_width="280dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="#FFFFFF"
+        android:elevation="8dp"
+        android:orientation="vertical"
+        android:paddingTop="16dp">
+
+        <!-- Sidebar Header -->
+        <TextView
+            android:id="@+id/sidebar_header"
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:background="#E3F2FD"
+            android:gravity="center_vertical"
+            android:paddingStart="24dp"
+            android:text="Drone Buddy App"
+            android:textColor="#2196F3"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <!-- Home -->
+        <Button
+            android:id="@+id/btnHome"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:backgroundTint="#E3F2FD"
+            android:gravity="start|center_vertical"
+            android:text="Home"
+            android:textAllCaps="false"
+            android:textColor="#1565C0" />
+
+        <!-- Camera View -->
+        <Button
+            android:id="@+id/btnCameraView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:backgroundTint="#FFFFFF"
+            android:gravity="start|center_vertical"
+            android:text="Camera View"
+            android:textAllCaps="false"
+            android:textColor="#333333" />
+
+        <!-- Drone Stats -->
+        <Button
+            android:id="@+id/btnDroneStats"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:backgroundTint="#FFFFFF"
+            android:gravity="start|center_vertical"
+            android:text="Drone Stats"
+            android:textAllCaps="false"
+            android:textColor="#333333" />
+
+        <Button
+            android:id="@+id/btnLog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:backgroundTint="#E3F2FD"
+            android:gravity="start|center_vertical"
+            android:text="Logs"
+            android:textAllCaps="false"
+            android:textColor="#1565C0" />
+
+    </LinearLayout>
+
+</androidx.drawerlayout.widget.DrawerLayout>
