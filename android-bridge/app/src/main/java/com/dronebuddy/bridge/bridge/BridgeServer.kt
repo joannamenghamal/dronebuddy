@@ -35,12 +35,16 @@ import kotlin.concurrent.thread
  * takeoff/land go through DjiFlightActions (plain DJIKey action calls), not
  * the virtual stick - those two are the one pair of commands that must work
  * even before virtual stick is enabled.
+ *
+ * Audio (`say` in, `voice_command` out) is passed through to the app and never
+ * touches flight: a failing speech callback is logged and nothing else changes.
  */
 class BridgeServer(
     port: Int,
     private val virtualStick: DjiVirtualStickController,
     private val staleCommandTimeoutMs: Long = 1000L,
     private val connectionLossTimeoutMs: Long = 3000L,
+    private val onSay: (BridgeMessage.Say) -> Unit = {},
 ) : WebSocketServer(InetSocketAddress(port)) {
 
     companion object {
@@ -89,6 +93,7 @@ class BridgeServer(
             "land" -> DjiFlightActions.land { ok, error ->
                 conn.send(ProtocolCodec.encodeAck(BridgeMessage.Ack("land", ok, error?.toString())))
             }
+            "say" -> handleSay(json)
             else -> Log.w(TAG, "unknown message type, ignoring")
         }
     }
@@ -105,6 +110,28 @@ class BridgeServer(
         }
         virtualStick.sendVelocity(cmd.forward, cmd.right, cmd.up, cmd.yaw)
         conn.send(ProtocolCodec.encodeAck(BridgeMessage.Ack("flight_command", true)))
+    }
+
+    /** No ack: a missed sentence is simply replaced by the next alert. */
+    private fun handleSay(json: JSONObject) {
+        val say = ProtocolCodec.decodeSay(json)
+        if (say == null) {
+            Log.w(TAG, "malformed say, ignoring")
+            return
+        }
+        try {
+            onSay(say)
+        } catch (e: Exception) {
+            Log.e(TAG, "speaking failed", e)
+        }
+    }
+
+    /** For the push-to-talk screen. False if there's no Python client or the command is unknown. */
+    fun sendVoiceCommand(command: BridgeMessage.VoiceCommand): Boolean {
+        val encoded = ProtocolCodec.encodeVoiceCommand(command) ?: return false
+        val client = activeClient ?: return false
+        client.send(encoded)
+        return true
     }
 
     override fun onError(conn: WebSocket?, ex: Exception) {

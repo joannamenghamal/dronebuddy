@@ -193,10 +193,13 @@ confirm against the base Mini 3 specifically).
   reaches `DjiVirtualStickController`.
 - **Safe default**: on client connect, on client disconnect, and on socket
   error, `BridgeServer` forces a hover — never the last command received.
-- **Audio** (not built yet): speak each `say` with Android text-to-speech,
-  cutting off a `NORMAL` sentence for an `URGENT` one; stop speaking the
-  moment the push-to-talk screen is pressed; send `voice_command` when it's
-  released. Audio messages never affect flight.
+- **Audio**: `BridgeServer` hands each valid `say` to `SpeechPlayer`, which
+  speaks it with Android text-to-speech, cutting off a `NORMAL` sentence for
+  an `URGENT` one and dropping stale `NORMAL` ones (`SpeechPolicy`). Written
+  but not yet run on a device. Still to build: the push-to-talk screen,
+  which must call `SpeechPlayer.stopSpeaking()` when pressed and
+  `BridgeServer.sendVoiceCommand()` when released. Audio messages never
+  affect flight; a failing speech callback is only logged.
 
 ## What's still open
 

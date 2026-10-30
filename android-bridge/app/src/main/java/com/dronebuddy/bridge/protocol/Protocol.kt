@@ -9,6 +9,9 @@ import org.json.JSONObject
  * set is small and fixed.
  */
 
+/** How urgent something spoken to the user is - see the `say` message. */
+enum class SpeechPriority { NORMAL, URGENT }
+
 sealed class BridgeMessage {
 
     data class FlightCommand(
@@ -37,6 +40,22 @@ sealed class BridgeMessage {
     data class EmergencyStop(val reason: String) : BridgeMessage()
 
     data class Ack(val forType: String, val ok: Boolean, val detail: String? = null) : BridgeMessage()
+
+    /** Python -> Android: speak this to the user. pan -1 (left ear) .. +1 (right ear), volume 0 .. 1. */
+    data class Say(
+        val text: String,
+        val priority: SpeechPriority,
+        val pan: Float,
+        val volume: Float,
+    ) : BridgeMessage()
+
+    /** Android -> Python: what the user said on the push-to-talk screen, as a command. */
+    data class VoiceCommand(
+        val command: String,
+        val argument: String?,
+        val heard: String,
+        val confidence: Double,
+    ) : BridgeMessage()
 }
 
 /**
@@ -48,6 +67,9 @@ object ProtocolCodec {
 
     private const val AXIS_MIN = -1.0
     private const val AXIS_MAX = 1.0
+
+    /** The voice commands Python understands (app/voice_commands.py) - names must match exactly. */
+    val VOICE_COMMANDS = setOf("START_SESSION", "STOP_SESSION", "WHERE_IS", "REPEAT", "LOUDER", "QUIETER")
 
     fun decodeFlightCommand(json: JSONObject): BridgeMessage.FlightCommand? {
         val forward = json.optDouble("forward", Double.NaN)
@@ -93,6 +115,44 @@ object ProtocolCodec {
         val json = JSONObject()
         json.put("type", "emergency_stop")
         json.put("reason", reason)
+        return json.toString()
+    }
+
+    /**
+     * A malformed `say` is dropped rather than half-spoken; pan and volume outside
+     * their ranges are clamped, since a slightly-off number is still worth saying.
+     */
+    fun decodeSay(json: JSONObject): BridgeMessage.Say? {
+        val text = json.optString("text", "").trim()
+        if (text.isEmpty()) return null
+
+        val priority = when (json.optString("priority", "NORMAL")) {
+            "NORMAL" -> SpeechPriority.NORMAL
+            "URGENT" -> SpeechPriority.URGENT
+            else -> return null
+        }
+
+        val pan = json.optDouble("pan", 0.0)
+        val volume = json.optDouble("volume", 1.0)
+        if (listOf(pan, volume).any { it.isNaN() || it.isInfinite() }) return null
+
+        return BridgeMessage.Say(
+            text = text,
+            priority = priority,
+            pan = pan.coerceIn(-1.0, 1.0).toFloat(),
+            volume = volume.coerceIn(0.0, 1.0).toFloat(),
+        )
+    }
+
+    /** Null for a command Python wouldn't understand, so it's never sent. */
+    fun encodeVoiceCommand(v: BridgeMessage.VoiceCommand): String? {
+        if (v.command !in VOICE_COMMANDS) return null
+        val json = JSONObject()
+        json.put("type", "voice_command")
+        json.put("command", v.command)
+        json.put("argument", v.argument ?: JSONObject.NULL)
+        json.put("heard", v.heard)
+        json.put("confidence", v.confidence)
         return json.toString()
     }
 

@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.dronebuddy.bridge.audio.SpeechPlayer
 import com.dronebuddy.bridge.bridge.BridgeServer
 import com.dronebuddy.bridge.dji.DjiCameraStreamProvider
 import com.dronebuddy.bridge.dji.DjiSdkConnectionManager
@@ -31,6 +32,7 @@ class MainActivity : AppCompatActivity() {
     private val telemetryProvider = DjiTelemetryProvider()
     private val cameraStreamProvider = DjiCameraStreamProvider()
     private lateinit var sdkConnectionManager: DjiSdkConnectionManager
+    private lateinit var speechPlayer: SpeechPlayer
     @Volatile private var aircraftConnected = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -83,11 +85,15 @@ class MainActivity : AppCompatActivity() {
             bridgeServer?.broadcastVideoFrame(jpegBytes)
         }
 
+        // Speaks Python's alerts to the user; created before the bridge so the
+        // first `say` ("Visual Buddy ready") isn't lost
+        speechPlayer = SpeechPlayer(applicationContext)
+
         startBridgeServer()
     }
 
     private fun startBridgeServer() {
-        val server = BridgeServer(port = BRIDGE_PORT, virtualStick = virtualStick)
+        val server = BridgeServer(port = BRIDGE_PORT, virtualStick = virtualStick, onSay = speechPlayer::speak)
         bridgeServer = server
         server.start()
         bridgeStatusText.text = "Bridge: listening on $BRIDGE_PORT"
@@ -98,5 +104,6 @@ class MainActivity : AppCompatActivity() {
         telemetryProvider.stopListening()
         cameraStreamProvider.stopListening()
         bridgeServer?.shutdownServer()
+        if (::speechPlayer.isInitialized) speechPlayer.shutdown()
     }
 }

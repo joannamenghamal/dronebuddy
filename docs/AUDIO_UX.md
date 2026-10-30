@@ -74,11 +74,12 @@ only in the path, and the answer comes from that object's side.
 
 The Python side is connected: on `--drone dji` alerts go to the phone as
 `say` messages and commands come from it as `voice_command` messages (see
-`DRONE_BRIDGE.md`). What's missing is the Android app's side:
+`DRONE_BRIDGE.md`). On the phone, speaking is written
+(`android-bridge/.../audio/SpeechPlayer.kt`: text-to-speech, URGENT cuts in,
+stereo from `pan`) but not yet run on a device. Still missing:
 
-- Speaking `say` messages with Android text-to-speech, cutting off for
-  URGENT, stereo from `pan`, and tones.
 - The push-to-talk screen and speech recognition that send `voice_command`.
+- Tones for repeated warnings.
 
 Until then, test with `--drone mock`: the laptop speaks, in mono, and
 `--voice-script` stands in for the user's commands.
