@@ -6,6 +6,11 @@ session. This document is the ground truth for the wire format both sides
 were built against — if you change one side, update this file and the other
 side in the same change.
 
+**Where it runs:** the team's Android app, `android-app/`
+(`bridge/BridgeServer.kt`, set up in `dronecontrollers/DroneManagerViewModel.kt`).
+`android-bridge/` is the earlier standalone bridge app with the same bridge
+code; it stays until `android-app/` has been tested with the drone.
+
 ## Why a bridge at all
 
 The DJI Mobile SDK is Android/iOS-only — there is no Python or desktop

@@ -98,6 +98,9 @@ dependencies {
     compileOnly("com.dji:dji-sdk-v5-aircraft-provided:5.18.0")
     runtimeOnly("com.dji:dji-sdk-v5-networkImp:5.18.0")
 
+    // WebSocket server for the bridge to the Python side (bridge/BridgeServer.kt)
+    implementation("org.java-websocket:Java-WebSocket:1.5.6")
+
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.activity.ktx)
@@ -106,6 +109,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.material)
     testImplementation(libs.junit)
+    // Android's own org.json only has stubs in local unit tests (bridge/ and audio/ tests)
+    testImplementation("org.json:json:20240303")
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
 }

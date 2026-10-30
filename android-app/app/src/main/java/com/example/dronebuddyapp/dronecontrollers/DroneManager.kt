@@ -11,4 +11,9 @@ class DroneManager(context: Context) {
     val droneFlightControl = DBDroneFlightControl()
     val droneKeyControl = DBDroneKeyControl()
 
+    // Used by the bridge to the Python side (set up in DroneManagerViewModel)
+    val virtualStick = DjiVirtualStickController()
+    val telemetry = DjiTelemetryProvider()
+    val cameraStream = DjiCameraStreamProvider()
+
 }
