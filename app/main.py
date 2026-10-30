@@ -107,10 +107,10 @@ def run(platform: str, source=None, muted=False):
                 session_log.log("person_alert", message=alert.text, priority=alert.priority.name)
                 audio.say(alert.text, alert.priority, alert.pan)
 
-            ## Object Locator -> Audio Output (everything that isn't a person)
-            for label, position, message in locator.locate(detections, frame_width, frame_height):
+            ## Object Locator -> Audio Output: objects in the user's path ("chair ahead on your left")
+            for label, position, message, pan in locator.locate(detections, user, frame_width, frame_height):
                 session_log.log("object_alert", label=label, position=position)
-                audio.say(message)
+                audio.say(message, pan=pan)
 
             ## Drone follow: keep the user at the bottom-middle of the frame.
             ## Every command goes through the safety manager before it can reach the drone
