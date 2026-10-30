@@ -51,7 +51,7 @@ def build_drone(platform: str, source=None) -> DroneController:
     raise ValueError(f"unknown drone platform: {platform!r}")
 
 
-def run(platform: str, source=None):
+def run(platform: str, source=None, muted=False):
     config = load_config()
     model = load_model(WEIGHTS_PATH)
     safety = SafetyManager(config)
@@ -59,7 +59,7 @@ def run(platform: str, source=None):
     tracking = TrackingModule()
     actions = ComputeActions()
     locator = ObjectLocator()
-    audio = AudioOutput()
+    audio = AudioOutput(muted=muted)
     session_log = SessionLogger()
 
     drone = build_drone(platform, source)
@@ -104,8 +104,8 @@ def run(platform: str, source=None):
                                 height_ratio=round(event.height_ratio, 2))
 
             for alert in actions.compute(events):
-                session_log.log("person_alert", message=alert)
-                audio.say(alert)
+                session_log.log("person_alert", message=alert.text, priority=alert.priority.name)
+                audio.say(alert.text, alert.priority, alert.pan)
 
             ## Object Locator -> Audio Output (everything that isn't a person)
             for label, position, message in locator.locate(detections, frame_width, frame_height):
@@ -278,10 +278,15 @@ def parse_args():
         help="--drone mock only: camera index (e.g. 0), path to a recorded DJI clip, "
         "or a stream URL. Default: $CAMERA_INDEX or 0",
     )
+    parser.add_argument(
+        "--mute",
+        action="store_true",
+        help="Log spoken alerts instead of saying them out loud.",
+    )
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     configure_logging()
     args = parse_args()
-    run(args.drone, parse_source(args.source))
+    run(args.drone, parse_source(args.source), args.mute)

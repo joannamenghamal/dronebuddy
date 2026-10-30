@@ -2,6 +2,7 @@
 announcements and user selection. No camera, model or drone needed."""
 import unittest
 
+from app.audio_output import Priority
 from app.compute_actions import ComputeActions
 from app.detection_module import Detection
 from app.object_locator import ObjectLocator
@@ -24,6 +25,10 @@ def person(track_id, center_x, height):
     """A person Detection centered at center_x, standing on the bottom of the frame."""
     width = height * 0.4
     return Detection("person", (center_x - width / 2, FRAME_H - height, center_x + width / 2, FRAME_H), track_id)
+
+
+def texts(alerts):
+    return [alert.text for alert in alerts]
 
 
 def confirm(tracking, clock, people):
@@ -87,13 +92,13 @@ class ComputeActionsTests(unittest.TestCase):
         actions = ComputeActions(cooldown_s=5, clock=clock)
 
         events = confirm(tracking, clock, [person(1, 100, 300)])
-        self.assertEqual(actions.compute(events), ["Person on your left"])
+        self.assertEqual(texts(actions.compute(events)), ["Person on your left"])
 
         ## Same event again within the cooldown is not repeated
         self.assertEqual(actions.compute(events), [])
 
         clock.now += 6
-        self.assertEqual(actions.compute(events), ["Person on your left"])
+        self.assertEqual(texts(actions.compute(events)), ["Person on your left"])
 
     def test_two_people_same_message_spoken_once(self):
         clock = FakeClock()
@@ -101,7 +106,21 @@ class ComputeActionsTests(unittest.TestCase):
         actions = ComputeActions(clock=clock)
 
         events = confirm(tracking, clock, [person(1, 640, 300), person(2, 660, 300)])
-        self.assertEqual(actions.compute(events), ["Person ahead"])
+        self.assertEqual(texts(actions.compute(events)), ["Person ahead"])
+
+    def test_approaching_is_urgent_and_comes_from_the_persons_side(self):
+        clock = FakeClock()
+        tracking = TrackingModule(clock)
+        actions = ComputeActions(clock=clock)
+
+        ## Confirmed on the right, then their box grows: approaching
+        confirm(tracking, clock, [person(1, 1100, 200)])
+        events = run_frames(tracking, clock, [[person(1, 1100, 200 + i * 15)] for i in range(20)])
+        approaching = [a for a in actions.compute(events) if a.text.startswith("Person approaching")]
+
+        self.assertEqual(len(approaching), 1)
+        self.assertEqual(approaching[0].priority, Priority.URGENT)
+        self.assertGreater(approaching[0].pan, 0.5)
 
 
 class ObjectLocatorTests(unittest.TestCase):

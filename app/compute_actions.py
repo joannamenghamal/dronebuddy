@@ -1,10 +1,19 @@
 import time
+from dataclasses import dataclass
 
+from app.audio_output import Priority
 from app.person_tracker import describe_position
 from app.tracking_module import APPROACHING, LEFT_FRAME, NEW
 
 ALERT_COOLDOWN_S = 5.0    # Don't repeat the same alert about the same person more often than this
 MESSAGE_COOLDOWN_S = 2.0  # Don't say the exact same words twice in a row, even about different people
+
+
+@dataclass
+class Alert:
+    text: str
+    priority: Priority = Priority.NORMAL
+    pan: float = 0.0  # Where the sound comes from: -1.0 = left ear .. +1.0 = right ear
 
 
 class ComputeActions:
@@ -21,7 +30,7 @@ class ComputeActions:
         self.last_message = {}  # message text -> time it was last spoken
 
     def compute(self, events):
-        """events: ActivityEvents from the TrackingModule. Returns a list of alert strings."""
+        """events: ActivityEvents from the TrackingModule. Returns a list of Alerts."""
         now = self.clock()
         alerts = []
 
@@ -40,7 +49,10 @@ class ComputeActions:
 
             self.last_alert[key] = now
             self.last_message[message] = now
-            alerts.append(message)
+
+            ## Someone coming toward the user is urgent; the sound comes from their side
+            priority = Priority.URGENT if event.activity == APPROACHING else Priority.NORMAL
+            alerts.append(Alert(message, priority, max(-1.0, min(1.0, event.horizontal_error))))
 
         return alerts
 
