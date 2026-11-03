@@ -179,6 +179,33 @@ LogItem.addItem(LogItem.Status.ERROR, "Connection", "Drone 2 lost signal")
 - The log is **in memory only**. It is cleared when the app process is killed.
 - Use a short, consistent `tag` per area (for example `"Connection"`, `"Battery"`, `"Command"`) so entries are easy to scan.
 
+## Bridge to the Python side
+
+The laptop (Python, `app/` in the repo root) connects to this app over Wi-Fi on
+port 8765 and controls the drone through it. Message format:
+[`DRONE_BRIDGE.md`](../DRONE_BRIDGE.md). How it fits into an app:
+[`BRIDGE_INTEGRATION.md`](../BRIDGE_INTEGRATION.md).
+
+- `DroneManagerViewModel` starts the bridge when the app opens and stops it in
+  `onCleared`. `pythonConnectionStatus` says whether the laptop is connected;
+  bridge events go to the log under the tag `"Python Bridge"`.
+- `bridge/BridgeServer.kt` only carries messages: it never calls the DJI SDK.
+  It hands commands to `dronecontrollers/DjiCommandHandler.kt`, which flies the
+  drone (virtual stick in velocity mode, takeoff/land) and hovers if the laptop
+  disconnects or stops sending commands for 1 second.
+- When the drone connects, the ViewModel starts `DjiCameraStreamProvider`
+  (JPEG frames to the laptop) and `DjiTelemetryProvider` (battery, position,
+  heading, speed). Both stop when the drone disconnects. These live in
+  `DroneManager` with the other drone classes.
+- Virtual stick (`updateVirtualStick()` in the ViewModel) is on only while both
+  the drone and the laptop are connected, and turns off if the laptop goes
+  silent for 3 seconds. The rest of the time the controller's sticks fly the
+  drone as normal.
+- `audio/SpeechPlayer.kt` speaks the laptop's `say` alerts out loud.
+
+To test without flying, run `python3 -m scripts.bridge_check --host <phone ip>`
+from the repo root on a laptop on the same Wi-Fi.
+
 ## Project Structure
 
 ```

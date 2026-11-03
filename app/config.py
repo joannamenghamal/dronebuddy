@@ -30,6 +30,7 @@ class Config:
     stale_command_timeout_s: float = _float_env("STALE_COMMAND_TIMEOUT_S", 1.0)
     connection_loss_timeout_s: float = _float_env("CONNECTION_LOSS_TIMEOUT_S", 3.0)
     lost_person_timeout_s: float = _float_env("LOST_PERSON_TIMEOUT_S", 2.0)
+    lost_person_land_timeout_s: float = _float_env("LOST_PERSON_LAND_TIMEOUT_S", 5.0)
 
 
 def load_config() -> Config:

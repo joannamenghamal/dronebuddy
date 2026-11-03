@@ -56,31 +56,75 @@ Runs the full detection -> tracking -> follow -> safety -> drone loop against
 detections but never sending a command anywhere near real hardware. This is
 the first thing to run after any change to the follow-me or safety logic.
 
-## Ground-testing procedure before any real flight
+## Voice commands without the phone
 
-Only after the steps above pass:
+Until the phone app sends voice commands, `--voice-script` plays scripted
+ones at set seconds after start (`FakeMic`):
 
-1. **DJI Mini 3, propellers off or drone restrained**, once `DJIController`
-   and the Android bridge exist. Confirm `connect()`, `get_telemetry()`, and
-   `get_video_frame()` work, and that `drone.move()` calls (watch the
-   console/log output) look correct for a person walking in frame, before
-   trusting it to actually fly. See [DRONE_BRIDGE.md](DRONE_BRIDGE.md)'s
-   heartbeat/stale-command/connection-loss behavior specifically.
-2. **DJI Mini 3, open area, low battery threshold verified.** Take off
-   manually via the RC, confirm the low-battery `LAND` path works by
-   watching `SafetyManager` logs as the battery naturally drains near the
-   end of a flight — don't rely on this being correct after propellers are
-   already spinning near people or obstacles.
-3. **Emergency stop drill.** Before flying near any person, confirm
-   `SafetyManager.trigger_emergency_stop()` reachable from wherever the
-   operator will actually be (currently: nowhere convenient — there is no
-   keyboard/RC hook wired to it yet; wire one before this step is meaningful).
+```bash
+python -m app.main --drone mock --source videos/clip2.mp4 \
+    --voice-script "4:WHERE_IS:car, 8:QUIETER, 10:REPEAT, 14:STOP_SESSION"
+```
 
-The Tello backend used to give a cheap way to rehearse steps 1-3 indoors
-before trying them on the Mini 3; it's archived under
-[archive/tello/](archive/tello/README.md) and can be revived for that
-purpose if useful (see that README for how).
+Each command is answered out loud and logged (`voice_command`,
+`voice_answer`); `STOP_SESSION` ends the session. Add `--mute` to log the
+answers instead of speaking them.
 
-Do not skip from step 1 directly to unattended autonomous flight near a
-person. The existing safety timeouts are conservative but untested against
-real radio conditions.
+On `--drone dji`, commands come from the phone instead (`MicInput`) and the
+phone speaks (`BridgeSpeech`); `tests/unit/test_dji_controller.py`
+exercises that round trip against the fake bridge.
+
+## Checking a recorded drone clip
+
+```bash
+python tools/analyze_clip.py videos/clip1.mp4
+```
+
+Runs the whole pipeline on a recorded video with no window or speech, prints
+what it detected, how far away the user was and every alert, and saves an
+annotated copy of the video. Run it on real Mini 3 footage to see what the
+drone would do before it flies.
+
+## Flight-test procedure
+
+In order, each step only once the one before it works. Steps 1-2 can't make
+the drone fly.
+
+1. **Connection, drone on the ground, motors off.** Open the phone app with
+   the drone connected (Logs: "Bridge running"), then from the laptop:
+   ```bash
+   python -m scripts.bridge_check --host <phone ip> --save-frame frame.jpg
+   ```
+   Every line PASS; `frame.jpg` is the drone's camera view.
+2. **The real program, still on the ground.** `BRIDGE_HOST=<phone ip> python
+   -m app.main --drone dji` and walk in front of the drone's camera. Check the
+   video, the tracking boxes and the `Command:` line in the panel make sense.
+   Press SPACE once to see the emergency stop show up, then quit with `q`.
+3. **Taking back control.** Take off by hand and hover at eye height. Start
+   the laptop program (the phone's Logs say "Virtual stick on"), then check
+   both ways out: quit it with `q` and confirm the sticks fly the drone again
+   ("Virtual stick off"); start it again and press the controller's Pause
+   button. Don't go on until you know which one works.
+4. **Tiny moves.** Hovering after a hand takeoff:
+   ```bash
+   BRIDGE_HOST=<phone ip> python -m scripts.dji_smoke_test
+   ```
+   It asks for `y` before each 1-second move (about 20 cm up, 40 cm forward,
+   a 6° turn) and before landing. Check each goes the right way.
+5. **Following.** Open area, low, two people: one being followed, one on
+   the controller ready to take over. For the first runs, lower the speeds:
+   ```bash
+   MAX_FORWARD_SPEED=0.1 MAX_LATERAL_SPEED=0.1 MAX_YAW_RATE=0.1 \
+       BRIDGE_HOST=<phone ip> python -m app.main --drone dji
+   ```
+
+6. **Low battery.** Near the end of a flight, watch the laptop's log as the
+   battery drains toward `MIN_BATTERY_PERCENT` (20%) and confirm it lands.
+   Don't count on this before you've seen it work.
+
+The archived Tello backend ([archive/tello/](archive/tello/README.md)) can be
+revived to rehearse steps 3-5 indoors before trying them on the Mini 3.
+
+Don't skip from step 1 to unattended autonomous flight near a person. The
+safety timeouts are conservative but untested against real radio
+conditions. See [SAFETY.md](SAFETY.md) for what's still open.

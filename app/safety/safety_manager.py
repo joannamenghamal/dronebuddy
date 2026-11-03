@@ -13,6 +13,7 @@ logger = logging.getLogger("dronebuddy.safety")
 class SafetyState(Enum):
     NOMINAL = "NOMINAL"
     LOST_PERSON = "LOST_PERSON"
+    LOST_PERSON_LAND = "LOST_PERSON_LAND"
     LOW_BATTERY = "LOW_BATTERY"
     STALE_COMMAND = "STALE_COMMAND"
     CONNECTION_LOST = "CONNECTION_LOST"
@@ -103,11 +104,12 @@ class SafetyManager:
         ):
             return SafetyState.STALE_COMMAND
 
-        if (
-            self._last_person_visible_at is not None
-            and now - self._last_person_visible_at > self._config.lost_person_timeout_s
-        ):
-            return SafetyState.LOST_PERSON
+        if self._last_person_visible_at is not None:
+            lost_for = now - self._last_person_visible_at
+            if lost_for > self._config.lost_person_land_timeout_s:
+                return SafetyState.LOST_PERSON_LAND
+            if lost_for > self._config.lost_person_timeout_s:
+                return SafetyState.LOST_PERSON
 
         return SafetyState.NOMINAL
 
@@ -121,7 +123,7 @@ class SafetyManager:
         if state == SafetyState.EMERGENCY_STOP:
             return SafetyDecision(state, SafetyAction.EMERGENCY_STOP, HOVER)
 
-        if state == SafetyState.LOW_BATTERY:
+        if state in (SafetyState.LOW_BATTERY, SafetyState.LOST_PERSON_LAND):
             return SafetyDecision(state, SafetyAction.LAND, HOVER)
 
         if state in (

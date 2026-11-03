@@ -7,12 +7,10 @@ Camera / drone.get_video_frame()
    |
 OpenCV
    |
-YOLO (app/person_detector.py)
+YOLO + ByteTrack (app/detection_module.py)
    |
-Person Detection
-   |
-Person Tracking (app/person_tracker.py)
-   |
+User selection (app/person_tracker.py) ---- other people: TrackingModule -> ComputeActions --+
+   |                                         objects: ObjectLocator ------------------------+-> AudioOutput + SessionLogger
 Follow-Me Controller (app/control/follow_controller.py)
    |
 SafetyManager (app/safety/safety_manager.py)
@@ -51,14 +49,43 @@ End-to-end, one frame at a time:
 4. **Drone abstraction.** The resulting action is sent through
    `DroneController` — `MockDroneController` for development/testing with no
    hardware, or `DJIController`, a WebSocket client that talks to the
-   Android bridge app (`android-bridge/`), which holds the actual DJI
+   team's Android app (`android-app/`), which holds the actual DJI
    Mobile SDK session and talks to the physical Mini 3.
 5. **Display.** An OpenCV window shows the live feed with bounding boxes and
    the direction/distance/action overlay; `q` quits.
 
 Run with `python3 -m app.main --drone mock` (no hardware) or `--drone dji`
-(real Mini 3, once the bridge app is running and `BRIDGE_HOST` points at
-it — see [android-bridge/README.md](android-bridge/README.md)).
+(real Mini 3, once the phone app is running and `BRIDGE_HOST` points at
+it — see [android-app/README.md](android-app/README.md)).
+
+## Audio and voice
+
+Everything the visually impaired user hears comes from `AudioOutput`, and
+everything they ask goes through `VoiceControl`:
+
+- **Alerts.** `ComputeActions` turns other people's activity into `Alert`s;
+  "Person approaching" is `URGENT`. `ObjectLocator` announces objects in the
+  user's path only: their own width plus one body-width on each side, ahead
+  of them, and no farther than 0.40 of the way down the frame (the line the
+  drone holds the user's head on). With no user in view, the path is the
+  middle third of the frame.
+- **Speaking.** `AudioOutput` keeps a short priority queue on a background
+  thread: `URGENT` goes ahead of `NORMAL`, and when speech falls behind the
+  oldest `NORMAL` alert is dropped. Every alert carries a `pan` (-1 left ear
+  .. +1 right ear). The words come out of a backend: `LocalSpeech` (laptop
+  speakers), `SilentSpeech` (`--mute`, tests) or `BridgeSpeech` (the phone).
+- **Voice commands** (`app/voice_commands.py`): `START_SESSION`,
+  `STOP_SESSION`, `WHERE_IS <object>`, `REPEAT`, `LOUDER`, `QUIETER`. The
+  phone recognizes them while its push-to-talk screen is held. `VoiceControl`
+  answers every one out loud and logs it; `WHERE_IS` uses
+  `ObjectLocator.find()`, which remembers every object seen in the last 30 s;
+  `STOP_SESSION` ends the session like `q`.
+- **Phone link.** On `--drone dji` the audio rides the bridge: `BridgeSpeech`
+  sends `say` messages with `DJIController.send_message`, and `MicInput`
+  receives `voice_command` messages through `DJIController.add_message_handler`
+  (see `DRONE_BRIDGE.md`). On `--drone mock` the laptop speaks and only
+  `--voice-script` gives commands; `--mute` logs instead of speaking. The
+  Android side of both messages is not built yet.
 
 ## Why a SafetyManager sits between the controller and the follow-me logic
 
@@ -90,7 +117,7 @@ Implementations today:
 | Class | File | Status |
 |---|---|---|
 | `MockDroneController` | `app/drone/mock_controller.py` | Working — for running the pipeline with `--drone mock`, and for tests |
-| `DJIController` | `app/drone/dji_controller.py` | Implemented — a WebSocket client to the Android bridge app (`android-bridge/`), which holds the DJI Mobile SDK session, including video (JPEG frames over the same socket). Takeoff is manual (via the RC) — `app/main.py` never calls `takeoff()` itself. See [DRONE_BRIDGE.md](DRONE_BRIDGE.md) and [DJI_MINI_3_SETUP.md](DJI_MINI_3_SETUP.md) |
+| `DJIController` | `app/drone/dji_controller.py` | Implemented — a WebSocket client to the Android app (`android-app/`), which holds the DJI Mobile SDK session, including video (JPEG frames over the same socket). Takeoff is manual (via the RC) — `app/main.py` never calls `takeoff()` itself. See [DRONE_BRIDGE.md](DRONE_BRIDGE.md) and [DJI_MINI_3_SETUP.md](DJI_MINI_3_SETUP.md) |
 | `TelloController` | `archive/tello/tello_controller.py` | Archived, not wired into `--drone` — working at the time it was archived; see [archive/tello/README.md](archive/tello/README.md) |
 
 ## What changed vs. the pre-migration behavior
@@ -111,14 +138,24 @@ app/
   main.py                    # wiring: detection -> tracking -> follow -> safety -> drone
   config.py                  # env-var configuration, conservative defaults
   logging_setup.py           # structured logging config
-  person_detector.py         # YOLO wrapper (unchanged, platform-agnostic)
-  person_tracker.py          # bbox -> direction/distance (unchanged, platform-agnostic)
+  detection_module.py        # YOLO + ByteTrack wrapper -> Detection (label, box, track_id)
+  person_tracker.py          # user selection, horizontal error, head-position distance
+  tracking_module.py         # per-person activity (NEW / APPROACHING / LEFT FRAME ...)
+  compute_actions.py         # which activities become spoken alerts, with cooldowns
+  object_locator.py          # objects in the user's path ("chair ahead"); find() for WHERE_IS
+  audio_output.py            # priority speech queue + backends (laptop, silent, phone bridge)
+  voice_commands.py          # the voice commands shared with the phone app, FakeMic
+  voice_control.py           # answers each voice command out loud
+  mic_input.py               # voice commands from the phone, over the bridge
+  bridge_messages.py         # the voice_command / say bridge messages
+  session_logger.py          # JSON Lines session log in logs/ for caregiver review
+  webcam_source.py           # laptop camera / recorded clip for --drone mock
   control/
-    follow_controller.py     # decision table (unchanged) + get_movement_command adapter (new)
+    follow_controller.py     # proportional yaw/forward MovementCommand from the user's position
   drone/
     controller.py            # DroneController interface, MovementCommand, Telemetry
     mock_controller.py        # in-memory fake for tests / --drone mock
-    dji_controller.py         # WebSocket client to android-bridge/ - see DRONE_BRIDGE.md
+    dji_controller.py         # WebSocket client to the phone app (android-app/) - see DRONE_BRIDGE.md
   safety/
     safety_manager.py        # connection-loss / stale-command / lost-person / battery / e-stop
 archive/
@@ -126,8 +163,13 @@ archive/
     tello_controller.py
     camera_test.py
     test_flight.py            # manual, real-hardware script - never auto-run by pytest
+android-app/                  # the team's Android app: DJI connection + the bridge - see its README
+android-bridge/               # earlier standalone bridge app, kept until android-app/ is flight-tested
 scripts/
+  bridge_check.py             # checks a phone app's bridge from the laptop, without flying
   dji_smoke_test.py           # manual, real-hardware staged takeoff/move/land test for the Mini 3
+tools/
+  analyze_clip.py             # runs a recorded clip through the pipeline, headless, with a report
 tests/
   unit/                       # command conversion, validation, clamping, safety states
   integration/                 # detection(fixture boxes) -> tracking -> follow -> mock drone
