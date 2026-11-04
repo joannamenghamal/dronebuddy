@@ -1,15 +1,10 @@
 package com.example.dronebuddyapp.dronecontrollers
 
 import android.content.Context
-import android.graphics.Color
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.asLiveData
-import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -20,7 +15,6 @@ import com.example.dronebuddyapp.bridge.BridgeServer
 import com.example.dronebuddyapp.logcontent.LogItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.observeOn
 import kotlinx.coroutines.launch
 
 
@@ -30,6 +24,7 @@ class DroneManagerViewModel(
 
     val droneManager = DroneManager(appContext)
 
+    // A bunch of important drone information that is automatically gathered and dumped into this viewmodel
     val droneAppConnectionStatus: LiveData<Boolean> =
         droneManager.droneConnectionControl.appRegisterStatus.asLiveData()
 
@@ -38,7 +33,14 @@ class DroneManagerViewModel(
 
     val droneInAirStatus : LiveData<Boolean> =
         droneManager.droneFlightKeys.droneInAirStatus.asLiveData()
-
+    val droneBatteryStatus : LiveData<Int> =
+        droneManager.droneFlightKeys.droneBatteryStatus.asLiveData()
+    val droneSpeedStatus : LiveData<Double> =
+        droneManager.droneFlightKeys.droneSpeedStatus.asLiveData()
+    val droneAltitudeStatus : LiveData<Double> =
+        droneManager.droneFlightKeys.droneAltitudeStatus.asLiveData()
+    val droneCompassCalibrationStatus : LiveData<String> =
+        droneManager.droneFlightKeys.droneCalibrationStatus.asLiveData()
     private var initializersRan = false
 
     // Put all things that need an initializer into this function

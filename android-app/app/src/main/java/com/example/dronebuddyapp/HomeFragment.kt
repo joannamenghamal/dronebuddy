@@ -209,7 +209,6 @@ class HomeFragment : Fragment() {
             tv.text = if (connected) "Connected" else "Disconnected"
             tv.setTextColor(if (connected) Color.GREEN else Color.RED)
         }
-
     }
 
     private fun connectDroneConnectionText(tv: TextView) {

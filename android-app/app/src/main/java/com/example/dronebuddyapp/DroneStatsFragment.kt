@@ -1,10 +1,16 @@
 package com.example.dronebuddyapp
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
+import androidx.core.graphics.toColorInt
+import androidx.fragment.app.activityViewModels
+import com.example.dronebuddyapp.dronecontrollers.DroneManagerViewModel
+import kotlin.getValue
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -20,6 +26,9 @@ class DroneStatsFragment : Fragment() {
     // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
+
+    // Get DroneManagerViewModel
+    private val droneManagerViewModels : DroneManagerViewModel by activityViewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,8 +50,54 @@ class DroneStatsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Define TextView Stats
+        val tvBatteryStatus = view.findViewById<TextView>(R.id.statBattery)
+        val tvSpeedStatus = view.findViewById<TextView>(R.id.statSpeed)
+        val tvAltitudeStatus = view.findViewById<TextView>(R.id.statAltitude)
+        val tvCompassCalibrationStatus = view.findViewById<TextView>(R.id.statCompassCalibration)
 
+        // Connect Status'
+        connectBatteryStatus(tvBatteryStatus)
+        connectSpeedStatus(tvSpeedStatus)
+        connectAltitudeStatus(tvAltitudeStatus)
+        connectCompassCalibrationStatus(tvCompassCalibrationStatus)
     }
+
+
+
+
+    private enum class AlertType(val colorInt : Int) {
+        WARNING("#E9D502".toColorInt()),
+        CRITICAL("#ff4c40".toColorInt())
+    }
+    private data class Alert(val message: String, val alertType: AlertType)
+
+    private fun connectBatteryStatus(tv: TextView) {
+        droneManagerViewModels.droneBatteryStatus.observe(viewLifecycleOwner) {
+            battPercentage ->
+            tv.text = battPercentage.toString()
+        }
+    }
+    private fun connectSpeedStatus(tv: TextView) {
+        droneManagerViewModels.droneSpeedStatus.observe(viewLifecycleOwner) {
+            speedStatus ->
+            tv.text = speedStatus.toString()
+        }
+    }
+    private fun connectAltitudeStatus(tv: TextView) {
+        droneManagerViewModels.droneAltitudeStatus.observe(viewLifecycleOwner) {
+                altitudeStatus ->
+            tv.text = altitudeStatus.toString()
+        }
+    }
+
+    private fun connectCompassCalibrationStatus(tv: TextView) {
+        droneManagerViewModels.droneCompassCalibrationStatus.observe(viewLifecycleOwner) {
+            status ->
+            tv.text = status
+        }
+    }
+
 
     companion object {
         /**
