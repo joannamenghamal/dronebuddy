@@ -21,7 +21,7 @@ from app.person_tracker import (
     get_head_ratio,
     get_horizontal_error,
     is_head_cut_off,
-    select_user,
+    UserLock,
 )
 from app.safety.safety_manager import SafetyAction, SafetyManager, SafetyState
 from app.session_logger import SessionLogger
@@ -81,7 +81,8 @@ def run(platform: str, source=None, muted=False, voice_script=None):
     drone.connect()
     drone.start_video_stream()
 
-    user_id = None
+    ## Released at the same moment the safety manager lands for a lost user
+    user_lock = UserLock(config.lost_person_land_timeout_s)
     landing = False
 
     session_log.log("session_start", platform=platform, source=source)
@@ -118,10 +119,9 @@ def run(platform: str, source=None, muted=False, voice_script=None):
             people = [d for d in detections if d.label == PERSON_LABEL]
 
             ## The user is the person kept at the bottom-middle of the frame;
-            ## stay locked on the same track ID while they're visible
-            user = select_user(people, user_id, frame_width, frame_height)
-            if user is not None and user.track_id is not None:
-                user_id = user.track_id
+            ## stay locked on the same track ID, and while they're out of view don't
+            ## switch to anyone else (no user = the drone hovers)
+            user = user_lock.pick(people, frame_width, frame_height)
 
             ## Tracking Module -> Compute Actions -> Audio Output (other people only -
             ## the user doesn't need to be told about themselves)

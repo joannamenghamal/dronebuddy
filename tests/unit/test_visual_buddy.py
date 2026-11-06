@@ -6,7 +6,7 @@ from app.audio_output import Priority
 from app.compute_actions import ComputeActions
 from app.detection_module import Detection
 from app.object_locator import ObjectLocator
-from app.person_tracker import describe_position, get_head_ratio, is_head_cut_off, select_user
+from app.person_tracker import UserLock, describe_position, get_head_ratio, is_head_cut_off, select_user
 from app.tracking_module import APPROACHING, LEFT_FRAME, NEW, STANDING_STILL, TrackingModule
 
 FRAME_W, FRAME_H = 1280, 720
@@ -208,6 +208,50 @@ class UserSelectionTests(unittest.TestCase):
         newcomer = Detection("person", (860, 400, 1060, FRAME_H), 9)  # Now closer to bottom-middle
 
         self.assertEqual(select_user([newcomer, user], 3, FRAME_W, FRAME_H).track_id, 3)
+
+    def test_lock_does_not_switch_while_user_is_briefly_out_of_view(self):
+        clock = FakeClock()
+        lock = UserLock(release_after_s=5.0, clock=clock)
+        user = Detection("person", (860, 400, 1060, FRAME_H), 3)
+        stranger = Detection("person", (880, 420, 1080, FRAME_H), 9)  # Also near bottom-middle
+
+        self.assertEqual(lock.pick([user], FRAME_W, FRAME_H).track_id, 3)
+
+        clock.now = 2.0
+        self.assertIsNone(lock.pick([stranger], FRAME_W, FRAME_H))
+
+    def test_lock_follows_user_again_when_they_come_back(self):
+        clock = FakeClock()
+        lock = UserLock(release_after_s=5.0, clock=clock)
+        user = Detection("person", (860, 400, 1060, FRAME_H), 3)
+        stranger = Detection("person", (880, 420, 1080, FRAME_H), 9)
+
+        lock.pick([user], FRAME_W, FRAME_H)
+        clock.now = 2.0
+        lock.pick([stranger], FRAME_W, FRAME_H)
+        clock.now = 4.0
+        self.assertEqual(lock.pick([stranger, user], FRAME_W, FRAME_H).track_id, 3)
+
+        ## Seeing them again restarts the countdown
+        clock.now = 8.0
+        self.assertIsNone(lock.pick([stranger], FRAME_W, FRAME_H))
+
+    def test_lock_is_released_after_user_is_gone_too_long(self):
+        clock = FakeClock()
+        lock = UserLock(release_after_s=5.0, clock=clock)
+        user = Detection("person", (860, 400, 1060, FRAME_H), 3)
+        stranger = Detection("person", (880, 420, 1080, FRAME_H), 9)
+
+        lock.pick([user], FRAME_W, FRAME_H)
+        clock.now = 5.0
+        self.assertEqual(lock.pick([stranger], FRAME_W, FRAME_H).track_id, 9)
+        self.assertEqual(lock.locked_id, 9)
+
+    def test_lock_with_nobody_in_view(self):
+        lock = UserLock(release_after_s=5.0, clock=FakeClock())
+
+        self.assertIsNone(lock.pick([], FRAME_W, FRAME_H))
+        self.assertIsNone(lock.locked_id)
 
     def test_describe_position(self):
         self.assertEqual(describe_position(-0.8), "on your left")

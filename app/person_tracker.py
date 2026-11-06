@@ -1,3 +1,5 @@
+import time
+
 ## Visual Buddy setup: the drone flies behind and slightly above the visually impaired user,
 ## keeping them at the bottom-middle of the frame so the camera sees what's ahead of them.
 ##
@@ -26,6 +28,35 @@ def select_user(people, locked_id=None, frame_width=None, frame_height=None):
             return person
 
     return min(people, key=lambda person: distance_to_bottom_middle(person.box, frame_width, frame_height))
+
+
+class UserLock:
+    """Remembers which track ID is the user across frames. If the user drops out of view
+    (someone walks in front, a missed detection), nobody else is picked, so the drone hovers
+    instead of following a stranger. Once the user has been gone for release_after_s, the
+    lock is released and the person closest to the bottom-middle becomes the user again."""
+
+    def __init__(self, release_after_s, clock=time.time):
+        self._release_after_s = release_after_s
+        self._clock = clock
+        self.locked_id = None
+        self._last_seen_at = None
+
+    def pick(self, people, frame_width, frame_height):
+        """The user (Detection) in this frame, or None while they're out of view."""
+        now = self._clock()
+        if self.locked_id is not None and now - self._last_seen_at >= self._release_after_s:
+            self.locked_id = None
+
+        if self.locked_id is None:
+            user = select_user(people, None, frame_width, frame_height)
+        else:
+            user = next((person for person in people if person.track_id == self.locked_id), None)
+
+        if user is not None and user.track_id is not None:
+            self.locked_id = user.track_id
+            self._last_seen_at = now
+        return user
 
 
 def distance_to_bottom_middle(box, frame_width, frame_height):
