@@ -6,10 +6,12 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.TextView
 import androidx.core.graphics.toColorInt
 import androidx.fragment.app.activityViewModels
 import com.example.dronebuddyapp.dronecontrollers.DroneManagerViewModel
+import dji.sdk.keyvalue.value.flightcontroller.CompassCalibrationState
 import kotlin.getValue
 
 // TODO: Rename parameter arguments, choose names that match
@@ -56,11 +58,17 @@ class DroneStatsFragment : Fragment() {
         val tvAltitudeStatus = view.findViewById<TextView>(R.id.statAltitude)
         val tvCompassCalibrationStatus = view.findViewById<TextView>(R.id.statCompassCalibration)
 
+        // Define Buttons
+        val btnCompassCalibration = view.findViewById<Button>(R.id.btnCompassCalibration)
+
         // Connect Status'
         connectBatteryStatus(tvBatteryStatus)
         connectSpeedStatus(tvSpeedStatus)
         connectAltitudeStatus(tvAltitudeStatus)
         connectCompassCalibrationStatus(tvCompassCalibrationStatus)
+
+        // Connect Buttons
+        activateCompassCalibrationStatus(btnCompassCalibration, tvCompassCalibrationStatus)
     }
 
 
@@ -95,6 +103,47 @@ class DroneStatsFragment : Fragment() {
         droneManagerViewModels.droneCompassCalibrationStatus.observe(viewLifecycleOwner) {
             status ->
             tv.text = status
+        }
+    }
+
+    private fun activateCompassCalibrationStatus(btn: Button, tv: TextView) {
+        btn.setOnClickListener {
+            val droneFlightKeys = droneManagerViewModels.droneManager.droneFlightKeys
+            // First check to see if currently in calibration mode, by checking if text is succeed or failed
+            // We will check the enum since that is consistent
+            droneManagerViewModels.droneCompassCalibrationStatusEnum.observe(viewLifecycleOwner) {
+                status ->
+                if (
+                    status == CompassCalibrationState.IDLE ||
+                    status == CompassCalibrationState.SUCCEEDED ||
+                    status == CompassCalibrationState.FAILED ||
+                    status == CompassCalibrationState.UNKNOWN
+                ) {
+                    droneFlightKeys.activateDroneCompassCalibration()
+                }
+                else {
+                    droneFlightKeys.cancelDroneCompassCalibration()
+                }
+            }
+        }
+    }
+
+    private fun connectButtonCompassCalibrationStatus(btn: Button) {
+        // We also want to connect the button so that it changes text based on whether it is going to
+        // cancel calibration or if it will start calib
+        droneManagerViewModels.droneCompassCalibrationStatusEnum.observe(viewLifecycleOwner) {
+                status ->
+            if (
+                status == CompassCalibrationState.IDLE ||
+                status == CompassCalibrationState.SUCCEEDED ||
+                status == CompassCalibrationState.FAILED ||
+                status == CompassCalibrationState.UNKNOWN
+            ) {
+                btn.text = "Activate Drone Calibration?"
+            }
+            else {
+                btn.text = "Cancel Drone Calibration?"
+            }
         }
     }
 

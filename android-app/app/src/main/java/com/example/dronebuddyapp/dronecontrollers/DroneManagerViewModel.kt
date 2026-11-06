@@ -13,6 +13,7 @@ import com.example.dronebuddyapp.audio.SpeechPlayer
 import com.example.dronebuddyapp.bridge.BridgeMessage
 import com.example.dronebuddyapp.bridge.BridgeServer
 import com.example.dronebuddyapp.logcontent.LogItem
+import dji.sdk.keyvalue.value.flightcontroller.CompassCalibrationState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -41,6 +42,8 @@ class DroneManagerViewModel(
         droneManager.droneFlightKeys.droneAltitudeStatus.asLiveData()
     val droneCompassCalibrationStatus : LiveData<String> =
         droneManager.droneFlightKeys.droneCalibrationStatus.asLiveData()
+    val droneCompassCalibrationStatusEnum : LiveData<CompassCalibrationState> =
+        droneManager.droneFlightKeys.droneCalibrationStatusEnum.asLiveData()
     private var initializersRan = false
 
     // Put all things that need an initializer into this function

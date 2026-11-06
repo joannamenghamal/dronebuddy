@@ -28,6 +28,8 @@ class DBDroneFlightKeys(private val keyControl : DBDroneKeyControl) {
     val droneAltitudeStatus : StateFlow<Double> = _droneAltitudeStatus.asStateFlow()
     private val _droneCalibrationStatus = MutableStateFlow("")
     val droneCalibrationStatus : StateFlow<String> = _droneCalibrationStatus.asStateFlow()
+    private val _droneCalibrationStatusEnum = MutableStateFlow(CompassCalibrationState.UNKNOWN)
+    val droneCalibrationStatusEnum : StateFlow<CompassCalibrationState> = _droneCalibrationStatusEnum.asStateFlow()
 
     // This needs to be ran after a drone connection is made, and potentially re-ran everytime a
     // drone connection is remade
@@ -150,11 +152,12 @@ class DBDroneFlightKeys(private val keyControl : DBDroneKeyControl) {
                         _droneCalibrationStatus.value = "UNKNOWN STATE! REDO CALIBRATION"
                     }
                     else if (p1 == CompassCalibrationState.HORIZONTAL) {
-                        _droneCalibrationStatus.value = "ROTATE HORIZONTALLY 360 DEGREES"
+                        _droneCalibrationStatus.value = "LIFT 1.5M OFF GROUND, ROTATE HORIZONTALLY 360 DEGREES"
                     }
                     else if (p1 == CompassCalibrationState.VERTICAL) {
                         _droneCalibrationStatus.value = "ROTATE VERTICAL 360 DEGREES"
                     }
+                    _droneCalibrationStatusEnum.value = p1
                 } else {
                     _droneCalibrationStatus.value = "ERROR"
                     LogItem.addLog(
@@ -162,11 +165,30 @@ class DBDroneFlightKeys(private val keyControl : DBDroneKeyControl) {
                         "Could not get drone flying status",
                         LogItem.Status.ERROR
                     )
+                    _droneCalibrationStatusEnum.value = p1
                 }
             }
 
         }
         val key = keyControl.spawnKeyListeners(FlightControllerKey.KeyCompassCalibrationStatus, callback)
+    }
+
+    fun activateDroneCompassCalibration(successLambda: (() -> Unit)? = null, failLambda : ((IDJIError) -> Unit)? = null) {
+        keyControl.performActionOnce(
+            FlightControllerKey.KeyStartCompassCalibration,
+            "Starting Compass Calibration",
+            successLambda = { successLambda?.invoke() },
+            failLambda = { error -> failLambda?.invoke(error) }
+        )
+    }
+
+    fun cancelDroneCompassCalibration(successLambda: (() -> Unit)? = null, failLambda : ((IDJIError) -> Unit)? = null) {
+        keyControl.performActionOnce(
+            FlightControllerKey.KeyStopCompassCalibration,
+            "Stopping Compass Calibration!",
+            successLambda = { successLambda?.invoke() },
+            failLambda = { error -> failLambda?.invoke(error) }
+        )
     }
 
     fun activateDroneLiftoff(successLambda : (() -> Unit)? = null, failLambda : ((IDJIError) -> Unit)? = null) {

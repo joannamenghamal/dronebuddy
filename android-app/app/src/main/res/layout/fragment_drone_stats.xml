@@ -274,42 +274,6 @@
                         android:text="Calibrate Compass" />
                 </LinearLayout>
 
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_columnWeight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/textView2"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Gimbal Calibration"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/statGimbalCalibration"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="--"
-                        android:textSize="22sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_columnWeight="1"
-                    android:layout_marginBottom="16dp"
-                    android:orientation="vertical">
-
-                    <Button
-                        android:id="@+id/btnGimbalCalibration"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Calibrate Gimbal" />
-                </LinearLayout>
-
             </GridLayout>
 
 
