@@ -26,7 +26,7 @@ class DBDroneFlightKeys(private val keyControl : DBDroneKeyControl) {
     val droneSpeedStatus : StateFlow<Double> = _droneSpeedStatus.asStateFlow()
     private val _droneAltitudeStatus = MutableStateFlow(0.0)
     val droneAltitudeStatus : StateFlow<Double> = _droneAltitudeStatus.asStateFlow()
-    private val _droneCalibrationStatus = MutableStateFlow("")
+    private val _droneCalibrationStatus = MutableStateFlow("Not Connected")
     val droneCalibrationStatus : StateFlow<String> = _droneCalibrationStatus.asStateFlow()
     private val _droneCalibrationStatusEnum = MutableStateFlow(CompassCalibrationState.UNKNOWN)
     val droneCalibrationStatusEnum : StateFlow<CompassCalibrationState> = _droneCalibrationStatusEnum.asStateFlow()
@@ -165,7 +165,7 @@ class DBDroneFlightKeys(private val keyControl : DBDroneKeyControl) {
                         "Could not get drone flying status",
                         LogItem.Status.ERROR
                     )
-                    _droneCalibrationStatusEnum.value = p1
+
                 }
             }
 

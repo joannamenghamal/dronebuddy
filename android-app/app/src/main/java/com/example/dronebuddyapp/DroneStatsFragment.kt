@@ -69,6 +69,7 @@ class DroneStatsFragment : Fragment() {
 
         // Connect Buttons
         activateCompassCalibrationStatus(btnCompassCalibration, tvCompassCalibrationStatus)
+        connectButtonCompassCalibrationStatus(btnCompassCalibration)
     }
 
 
