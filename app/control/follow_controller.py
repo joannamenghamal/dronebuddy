@@ -5,9 +5,9 @@ from app.person_tracker import DEAD_ZONE, HEAD_TOLERANCE, TARGET_HEAD_RATIO
 ## Gains are fractions of the configured max speed per unit of error, so the
 ## command stays normalized (see MovementCommand) on any platform. Both saturate
 ## before the error does: yaw at 3/4 of the way to the frame edge, forward at
-## half a frame of head-position error.
+## a third of a frame of head-position error.
 YAW_GAIN = 4 / 3      # x config.max_yaw_rate per unit of horizontal error (-1..1)
-FORWARD_GAIN = 2.0    # x config.max_forward_speed per unit of head-position error
+FORWARD_GAIN = 3.0    # x config.max_forward_speed per unit of head-position error
 
 
 ## Turns the user's position into a velocity command that keeps them at the bottom-middle

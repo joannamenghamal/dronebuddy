@@ -19,10 +19,10 @@ class Config:
 
     # Fractions of each platform's own max speed (see MovementCommand) —
     # kept low by default because this drives an autonomous system.
-    max_forward_speed: float = _float_env("MAX_FORWARD_SPEED", 0.3)
+    max_forward_speed: float = _float_env("MAX_FORWARD_SPEED", 0.6)
     max_lateral_speed: float = _float_env("MAX_LATERAL_SPEED", 0.3)
     max_vertical_speed: float = _float_env("MAX_VERTICAL_SPEED", 0.2)
-    max_yaw_rate: float = _float_env("MAX_YAW_RATE", 0.3)
+    max_yaw_rate: float = _float_env("MAX_YAW_RATE", 0.5)
 
     target_distance_px: int = _int_env("TARGET_DISTANCE", 450)
 

@@ -10,7 +10,7 @@ DEAD_ZONE = 0.10          # +/- fraction of half-frame width counted as "CENTER"
 ## the drone getting too close moves it down.
 TARGET_HEAD_RATIO = 0.40  # Head (box top) / frame height to hold the user at
                           # (measured in our DJI footage when the user was framed naturally)
-HEAD_TOLERANCE = 0.08     # +/- around the target counted as "GOOD DISTANCE"
+HEAD_TOLERANCE = 0.05     # +/- around the target counted as "GOOD DISTANCE"
 EDGE_MARGIN = 0.01        # Box top within this fraction of the top edge = head is cut off
 
 
