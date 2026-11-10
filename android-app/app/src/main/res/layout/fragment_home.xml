@@ -1,203 +1,229 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fillViewport="true"
     tools:context=".HomeFragment">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="8dp">
+        android:padding="16dp">
 
-        <!-- DJI App Connection Status -->
+        <!-- ===== CONNECTION ===== -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Connection"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textStyle="bold" />
 
-        <LinearLayout
-            android:id="@+id/layout_dji_app_connection_status"
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp">
 
             <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/home_layout_borders"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="10dp">
+                android:padding="16dp">
 
-                <TextView
-                    android:id="@+id/header_dji_app_connection_status"
+                <!-- DJI App Connection -->
+                <LinearLayout
+                    android:id="@+id/layout_dji_app_connection_status"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="DJI App Connection Status" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-                <Button
-                    android:id="@+id/btn_connect_app_retry"
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/header_dji_app_connection_status"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="DJI App Connection"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/updatable_dji_app_connection_status"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="If you're seeing this something is wrong"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <Button
+                        android:id="@+id/btn_connect_app_retry"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:text="Retry Connect" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="?attr/colorOutlineVariant" />
+
+                <!-- Drone Connection -->
+                <LinearLayout
+                    android:id="@+id/layout_drone_connection_status"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Retry Connect" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/header_dji_drone_connection_status"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Drone Connection"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/updatable_dji_drone_connection_status"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="If you're seeing this something is wrong"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <Button
+                        android:id="@+id/btn_connect_drone_retry"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:text="Retry Connect" />
+                </LinearLayout>
             </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/home_layout_borders"
-                android:orientation="vertical"
-                android:padding="10dp">
+        <!-- ===== FLIGHT CONTROLS ===== -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Flight Controls"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/updatable_dji_app_connection_status"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="If you're seeing this something is wrong" />
-
-            </LinearLayout>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/layout_drone_connection_status"
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:layout_marginTop="8dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp">
 
             <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/home_layout_borders"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="10dp">
+                android:padding="16dp">
 
-                <TextView
-                    android:id="@+id/header_dji_drone_connection_status"
+                <!-- Liftoff / Landing -->
+                <LinearLayout
+                    android:id="@+id/layout_liftoff_landing_action"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Drone Connection Status" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-                <Button
-                    android:id="@+id/btn_connect_drone_retry"
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/header_liftoff_landing_text"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Liftoff / Landing"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/updatable_liftoff_landing_status"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="If you're seeing this something is wrong"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <Button
+                        android:id="@+id/btn_liftoff_landing"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:text="Activate Liftoff" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="?attr/colorOutlineVariant" />
+
+                <!-- Virtual Stick -->
+                <LinearLayout
+                    android:id="@+id/layout_virtual_stickmode_action"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Retry Connect" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/header_virtual_stickmode_text"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Virtual Stick Override"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/updatable_virtual_stickmode_status"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="If you're seeing this something is wrong"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <Button
+                        android:id="@+id/btn_change_virtual_stickmode"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:text="Enable Virtual Stick" />
+                </LinearLayout>
             </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/home_layout_borders"
-                android:orientation="vertical"
-                android:padding="10dp">
-
-                <TextView
-                    android:id="@+id/updatable_dji_drone_connection_status"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="If you're seeing this something is wrong" />
-
-            </LinearLayout>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/layout_liftoff_landing_action"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/home_layout_borders"
-                android:orientation="vertical"
-                android:padding="10dp">
-
-                <TextView
-                    android:id="@+id/header_liftoff_landing_text"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Drone Liftoff/Landing" />
-
-                <Button
-                    android:id="@+id/btn_liftoff_landing"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Activate Liftoff" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/home_layout_borders"
-                android:orientation="vertical"
-                android:padding="10dp">
-
-                <TextView
-                    android:id="@+id/updatable_liftoff_landing_status"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="If you're seeing this something is wrong" />
-
-            </LinearLayout>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/layout_virtual_stickmode_action"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/home_layout_borders"
-                android:orientation="vertical"
-                android:padding="10dp">
-
-                <TextView
-                    android:id="@+id/header_virtual_stickmode_text"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Virtual Stick Override" />
-
-                <Button
-                    android:id="@+id/btn_change_virtual_stickmode"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Enable Virtual Stick" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/home_layout_borders"
-                android:orientation="vertical"
-                android:padding="10dp">
-
-                <TextView
-                    android:id="@+id/updatable_virtual_stickmode_status"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="If you're seeing this something is wrong" />
-
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- Drone Connection Status -->
-
+        </com.google.android.material.card.MaterialCardView>
     </LinearLayout>
-
-
-</FrameLayout>
+</ScrollView>
