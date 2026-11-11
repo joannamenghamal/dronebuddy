@@ -1,4 +1,4 @@
-package dji.sampleV5.aircraft.visualbuddy
+package com.example.dronebuddyapp.dronecontrollers
 
 import dji.v5.common.callback.CommonCallbacks
 import dji.v5.common.error.IDJIError

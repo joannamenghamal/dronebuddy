@@ -8,8 +8,10 @@ import androidx.recyclerview.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import com.example.dronebuddyapp.logcontent.LogRecyclerViewAdapter
+import androidx.lifecycle.lifecycleScope
+import com.example.dronebuddyapp.logcontent.LogListAdapterView
 import com.example.dronebuddyapp.logcontent.LogItem
+import kotlinx.coroutines.launch
 
 /**
  * A fragment representing a list of Items.
@@ -17,6 +19,8 @@ import com.example.dronebuddyapp.logcontent.LogItem
 class LogFragment : Fragment() {
 
     private var columnCount = 1
+    private var recyclerView : RecyclerView? = null
+    private var logAdapter = LogListAdapterView()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,16 +37,36 @@ class LogFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_log_list, container, false)
 
         // Set the adapter
+        // ListAdapter is a type of recyclerview
         if (view is RecyclerView) {
-            with(view) {
-                layoutManager = when {
-                    columnCount <= 1 -> LinearLayoutManager(context)
-                    else -> GridLayoutManager(context, columnCount)
-                }
-                adapter = LogRecyclerViewAdapter(LogItem.ITEMS)
+            recyclerView = view
+            view.layoutManager = when {
+                columnCount <= 1 -> LinearLayoutManager(context)
+                else -> GridLayoutManager(context, columnCount)
             }
+            view.adapter = logAdapter
         }
         return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            LogItem.logs.collect { list ->
+                logAdapter.submitList(list) {
+                    // Runs after the diff is applied
+                    if (list.isNotEmpty()) {
+                        recyclerView?.scrollToPosition(list.size - 1)
+                    }
+                }
+            }
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        recyclerView = null
     }
 
     companion object {

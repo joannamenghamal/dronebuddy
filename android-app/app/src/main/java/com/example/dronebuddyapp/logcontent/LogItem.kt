@@ -3,6 +3,10 @@ package com.example.dronebuddyapp.logcontent
 import android.graphics.Color
 import android.util.Log
 import androidx.core.graphics.toColorInt
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import java.text.SimpleDateFormat
 import java.util.ArrayList
 import java.util.Date
@@ -17,6 +21,9 @@ import java.util.Locale
  */
 object LogItem {
 
+    private val _logs = MutableStateFlow<List<LogItem>>(emptyList())
+    val logs : StateFlow<List<LogItem>> = _logs.asStateFlow()
+
     enum class Status (val status : String, val color: Int) {
         INFO("INFO", Color.BLACK),
 
@@ -25,41 +32,22 @@ object LogItem {
         ERROR("ERROR", Color.RED),
     }
 
-    /**
-     * An array of sample (placeholder) items.
-     */
-    val ITEMS: MutableList<LogItem> = ArrayList()
-
-    /**
-     * A map of sample (placeholder) items, by tag.
-     */
-    val ITEM_MAP: MutableMap<String, LogItem> = HashMap()
-
-    private val COUNT = 25
-
-    // Definitely need to remove this
     init {
         // Add some sample items.
-        addItem(LogItem("Tag1", "Hello this is a test", Status.INFO))
-
+        addLog("Test", "Hello this is a test", Status.INFO)
     }
 
     // This is how people will add to our log
     fun addLog(tag: String, content: String, status: LogItem.Status) {
         val createdLogItem = LogItem(tag, content, status)
-
-        addItem(createdLogItem)
+        _logs.update {
+            (it + createdLogItem).takeLast(1000) // Only grab last 1000 logs
+        }
         Log.d(tag, content)
     }
 
-    private fun addItem(item: LogItem) {
-        ITEMS.add(item)
-        ITEM_MAP.put(item.tag, item)
-    }
 
-    /**
-     * A placeholder item representing a piece of content.
-     */
+    // Actual data class that we use to display
     data class LogItem(val tag: String, val content: String, val status: Status) {
 
         // Get the current local time

@@ -3,16 +3,15 @@ package com.example.dronebuddyapp.logcontent
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.dronebuddyapp.databinding.FragmentLogBinding
 
 /**
- * [androidx.recyclerview.widget.RecyclerView.Adapter] that can display a [LogItem.LogItem].
- * TODO: Replace the implementation with code for your data type.
+ * Using a listadapter instead of recyclerviewadapter since it automatically updates using DIFFutil
  */
-class LogRecyclerViewAdapter(
-    private val values: List<LogItem.LogItem>
-) : RecyclerView.Adapter<LogRecyclerViewAdapter.ViewHolder>() {
+class LogListAdapterView() : ListAdapter<LogItem.LogItem, LogListAdapterView.ViewHolder>(DIFF) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
 
@@ -28,14 +27,12 @@ class LogRecyclerViewAdapter(
 
     // This changes what is actually displayed
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val item = values[position]
+        val item = getItem(position)
         holder.idView.text = "${item.formattedTime} - [${item.tag}]"
         holder.idView.setTextColor(item.status.color)
         holder.contentView.text = item.content
         holder.contentView.setTextColor(item.status.color)
     }
-
-    override fun getItemCount(): Int = values.size
 
     inner class ViewHolder(binding: FragmentLogBinding) : RecyclerView.ViewHolder(binding.root) {
         val idView: TextView = binding.itemNumber
@@ -43,6 +40,13 @@ class LogRecyclerViewAdapter(
 
         override fun toString(): String {
             return super.toString() + " '" + contentView.text + "'"
+        }
+    }
+
+    companion object {
+        private val DIFF = object : DiffUtil.ItemCallback<LogItem.LogItem>() {
+            override fun areItemsTheSame(a: LogItem.LogItem, b: LogItem.LogItem) = a === b
+            override fun areContentsTheSame(a: LogItem.LogItem, b: LogItem.LogItem) = a == b
         }
     }
 

@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="760" viewBox="0 0 1240 760" font-family="Segoe UI, Arial, sans-serif">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<defs>
+  <marker id="open" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="12" markerHeight="12" orient="auto-start-reverse">
+    <path d="M1,1 L11,6 L1,11" fill="none" stroke="#1f2933" stroke-width="1.4"/>
+  </marker>
+  <marker id="filled" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="11" markerHeight="11" orient="auto-start-reverse">
+    <path d="M1,1 L11,6 L1,11 Z" fill="#1f2933"/>
+  </marker>
+  <marker id="diamond" viewBox="0 0 20 12" refX="19" refY="6" markerWidth="20" markerHeight="12" orient="auto-start-reverse">
+    <path d="M1,6 L10,1 L19,6 L10,11 Z" fill="#1f2933"/>
+  </marker>
+  <marker id="hollow" viewBox="0 0 16 16" refX="15" refY="8" markerWidth="16" markerHeight="16" orient="auto-start-reverse">
+    <path d="M1,1 L15,8 L1,15 Z" fill="#fff" stroke="#1f2933" stroke-width="1.4"/>
+  </marker>
+</defs>
+<text x="30.0" y="40.0" font-size="24" text-anchor="start" fill="#1f2933" font-weight="bold" xml:space="preserve">Phone push-to-talk screen: UI mockup</text>
+<text x="30.0" y="64.0" font-size="13" text-anchor="start" fill="#52606d" xml:space="preserve">Planned for the Android bridge app. Designed for a user who can&#x27;t see the screen: the whole screen is one button.</text>
+<rect x="60.0" y="100.0" width="300.0" height="600.0" rx="36" fill="#0d1117" stroke="#0d1117" stroke-width="1.4"/>
+<rect x="72.0" y="114.0" width="276.0" height="572.0" rx="26" fill="#11161c" stroke="#11161c" stroke-width="1.4"/>
+<text x="210.0" y="144.0" font-size="12" text-anchor="middle" fill="#f2f4f7" xml:space="preserve">Visual Buddy · connected</text>
+<circle cx="210.0" cy="350" r="58" fill="#f2f4f7" fill-opacity="0.16" stroke="#f2f4f7" stroke-width="3"/>
+<rect x="197.0" y="320.0" width="26.0" height="42.0" rx="13" fill="#f2f4f7" stroke="#f2f4f7" stroke-width="1.4"/>
+<path d="M186.0,348 a24,24 0 0 0 48,0" fill="none" stroke="#f2f4f7" stroke-width="4"/>
+<line x1="210.0" y1="372" x2="210.0" y2="384" stroke="#f2f4f7" stroke-width="4"/>
+<text x="210.0" y="490.0" font-size="26" text-anchor="middle" fill="#f2f4f7" font-weight="bold" xml:space="preserve">Hold anywhere</text>
+<text x="210.0" y="522.0" font-size="16" text-anchor="middle" fill="#f2f4f7" xml:space="preserve">to talk</text>
+<rect x="90.0" y="600.0" width="240.0" height="54.0" rx="10" fill="#f2f4f7" fill-opacity="0.12" stroke="#f2f4f7" stroke-width="1.4"/>
+<text x="210.0" y="622.0" font-size="11.5" text-anchor="middle" fill="#f2f4f7" xml:space="preserve">Last alert (for a helper)</text>
+<text x="210.0" y="641.0" font-size="13" text-anchor="middle" fill="#f2f4f7" font-weight="bold" xml:space="preserve">Person approaching, ahead</text>
+<text x="210.0" y="732.0" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold" xml:space="preserve">Waiting</text>
+<rect x="420.0" y="100.0" width="300.0" height="600.0" rx="36" fill="#0d1117" stroke="#0d1117" stroke-width="1.4"/>
+<rect x="432.0" y="114.0" width="276.0" height="572.0" rx="26" fill="#f2a541" stroke="#f2a541" stroke-width="1.4"/>
+<text x="570.0" y="144.0" font-size="12" text-anchor="middle" fill="#1b2430" xml:space="preserve">Visual Buddy · connected</text>
+<circle cx="570.0" cy="350" r="70" fill="none" stroke="#1b2430" stroke-opacity="0.45" stroke-width="3"/>
+<circle cx="570.0" cy="350" r="92" fill="none" stroke="#1b2430" stroke-opacity="0.33" stroke-width="3"/>
+<circle cx="570.0" cy="350" r="114" fill="none" stroke="#1b2430" stroke-opacity="0.21" stroke-width="3"/>
+<circle cx="570.0" cy="350" r="58" fill="#1b2430" fill-opacity="0.16" stroke="#1b2430" stroke-width="3"/>
+<rect x="557.0" y="320.0" width="26.0" height="42.0" rx="13" fill="#1b2430" stroke="#1b2430" stroke-width="1.4"/>
+<path d="M546.0,348 a24,24 0 0 0 48,0" fill="none" stroke="#1b2430" stroke-width="4"/>
+<line x1="570.0" y1="372" x2="570.0" y2="384" stroke="#1b2430" stroke-width="4"/>
+<text x="570.0" y="490.0" font-size="26" text-anchor="middle" fill="#1b2430" font-weight="bold" xml:space="preserve">Listening…</text>
+<text x="570.0" y="522.0" font-size="16" text-anchor="middle" fill="#1b2430" xml:space="preserve">release to send</text>
+<rect x="450.0" y="600.0" width="240.0" height="54.0" rx="10" fill="#1b2430" fill-opacity="0.12" stroke="#1b2430" stroke-width="1.4"/>
+<text x="570.0" y="622.0" font-size="11.5" text-anchor="middle" fill="#1b2430" xml:space="preserve">Heard</text>
+<text x="570.0" y="641.0" font-size="13" text-anchor="middle" fill="#1b2430" font-weight="bold" xml:space="preserve">where is my mug</text>
+<text x="570.0" y="732.0" font-size="15" text-anchor="middle" fill="#1f2933" font-weight="bold" xml:space="preserve">Held: listening</text>
+<circle cx="814" cy="128" r="14" fill="#f2a541"/>
+<text x="814.0" y="133.0" font-size="13" text-anchor="middle" fill="#1f2933" font-weight="bold" xml:space="preserve">1</text>
+<text x="840.0" y="133.0" font-size="16" text-anchor="start" fill="#1f2933" font-weight="bold" xml:space="preserve">Whole screen = one button</text>
+<text x="840.0" y="156.0" font-size="13" text-anchor="start" fill="#52606d" xml:space="preserve">no target to find; press anywhere, any orientation</text>
+<circle cx="814" cy="210" r="14" fill="#f2a541"/>
+<text x="814.0" y="215.0" font-size="13" text-anchor="middle" fill="#1f2933" font-weight="bold" xml:space="preserve">2</text>
+<text x="840.0" y="215.0" font-size="16" text-anchor="start" fill="#1f2933" font-weight="bold" xml:space="preserve">Felt, not seen</text>
+<text x="840.0" y="238.0" font-size="13" text-anchor="start" fill="#52606d" xml:space="preserve">short vibration on press and on release</text>
+<circle cx="814" cy="292" r="14" fill="#f2a541"/>
+<text x="814.0" y="297.0" font-size="13" text-anchor="middle" fill="#1f2933" font-weight="bold" xml:space="preserve">3</text>
+<text x="840.0" y="297.0" font-size="16" text-anchor="start" fill="#1f2933" font-weight="bold" xml:space="preserve">Pressing stops speech</text>
+<text x="840.0" y="320.0" font-size="13" text-anchor="start" fill="#52606d" xml:space="preserve">so the mic hears the user, not the last alert</text>
+<circle cx="814" cy="374" r="14" fill="#f2a541"/>
+<text x="814.0" y="379.0" font-size="13" text-anchor="middle" fill="#1f2933" font-weight="bold" xml:space="preserve">4</text>
+<text x="840.0" y="379.0" font-size="16" text-anchor="start" fill="#1f2933" font-weight="bold" xml:space="preserve">Works with TalkBack on</text>
+<text x="840.0" y="402.0" font-size="13" text-anchor="start" fill="#52606d" xml:space="preserve">the screen reader must not turn the press into “read this”</text>
+<circle cx="814" cy="456" r="14" fill="#f2a541"/>
+<text x="814.0" y="461.0" font-size="13" text-anchor="middle" fill="#1f2933" font-weight="bold" xml:space="preserve">5</text>
+<text x="840.0" y="461.0" font-size="16" text-anchor="start" fill="#1f2933" font-weight="bold" xml:space="preserve">Screen stays awake</text>
+<text x="840.0" y="484.0" font-size="13" text-anchor="start" fill="#52606d" xml:space="preserve">the phone is in a hand or pocket, not being looked at</text>
+<circle cx="814" cy="538" r="14" fill="#f2a541"/>
+<text x="814.0" y="543.0" font-size="13" text-anchor="middle" fill="#1f2933" font-weight="bold" xml:space="preserve">6</text>
+<text x="840.0" y="543.0" font-size="16" text-anchor="start" fill="#1f2933" font-weight="bold" xml:space="preserve">For a sighted helper</text>
+<text x="840.0" y="566.0" font-size="13" text-anchor="start" fill="#52606d" xml:space="preserve">large, high-contrast text: state, last alert, what was heard</text>
+<circle cx="814" cy="620" r="14" fill="#f2a541"/>
+<text x="814.0" y="625.0" font-size="13" text-anchor="middle" fill="#1f2933" font-weight="bold" xml:space="preserve">7</text>
+<text x="840.0" y="625.0" font-size="16" text-anchor="start" fill="#1f2933" font-weight="bold" xml:space="preserve">Answer is spoken</text>
+<text x="840.0" y="648.0" font-size="13" text-anchor="start" fill="#52606d" xml:space="preserve">“Cup on your left”, from the left ear in stereo</text>
+</svg>

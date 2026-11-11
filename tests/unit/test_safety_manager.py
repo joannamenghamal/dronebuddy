@@ -7,6 +7,7 @@ CONFIG = Config(
     stale_command_timeout_s=1.0,
     connection_loss_timeout_s=3.0,
     lost_person_timeout_s=2.0,
+    lost_person_land_timeout_s=5.0,
 )
 
 MOVE = MovementCommand(forward=0.5)
@@ -81,6 +82,31 @@ def test_lost_person_detected_after_timeout_elapses():
     manager.note_person_visible(True)
 
     clock.advance(CONFIG.lost_person_timeout_s + 0.1)
+
+    decision = manager.decide(MOVE)
+    assert decision.state == SafetyState.LOST_PERSON
+    assert decision.action == SafetyAction.HOVER
+
+
+def test_lost_person_triggers_land_after_land_timeout():
+    manager, clock = make_manager()
+    manager.note_person_visible(True)
+
+    clock.advance(CONFIG.lost_person_land_timeout_s + 0.1)
+    manager.note_telemetry(Telemetry(battery=80, connected=True))
+
+    decision = manager.decide(MOVE)
+    assert decision.state == SafetyState.LOST_PERSON_LAND
+    assert decision.action == SafetyAction.LAND
+    assert decision.command.is_zero
+
+
+def test_lost_person_still_hovers_just_before_land_timeout():
+    manager, clock = make_manager()
+    manager.note_person_visible(True)
+
+    clock.advance(CONFIG.lost_person_land_timeout_s - 0.1)
+    manager.note_telemetry(Telemetry(battery=80, connected=True))
 
     decision = manager.decide(MOVE)
     assert decision.state == SafetyState.LOST_PERSON

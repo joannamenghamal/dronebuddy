@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Matches DJI RC USB accessories so MainActivity launches automatically on
+  connect. Vendor/model/version strings here are UNVERIFIED for the Mini 3's
+  RC specifically - DJI's own sample project (Mobile-SDK-Android-V5) ships
+  the authoritative version of this filter; copy it from there rather than
+  trusting this placeholder as-is.
+-->
+<resources>
+    <usb-accessory />
+</resources>

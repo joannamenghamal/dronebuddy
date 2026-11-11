@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Optional, Union
 
 import cv2
 import numpy as np
@@ -8,9 +8,10 @@ logger = logging.getLogger("dronebuddy.video")
 
 
 class WebcamSource:
-    """Laptop camera feed for --drone mock."""
+    """Laptop camera feed for --drone mock. Also accepts a video file path or
+    stream URL, so recorded clips can be run through the same pipeline."""
 
-    def __init__(self, camera_index: int = 0):
+    def __init__(self, camera_index: Union[int, str] = 0):
         self.camera_index = camera_index
         self._capture: Optional[cv2.VideoCapture] = None
 

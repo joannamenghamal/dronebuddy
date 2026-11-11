@@ -3,8 +3,17 @@ package com.example.dronebuddyapp
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
+import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
+import android.widget.Button
+import android.widget.Spinner
+import androidx.fragment.app.activityViewModels
+import com.example.dronebuddyapp.dronecontrollers.DroneManagerViewModel
+import com.example.dronebuddyapp.logcontent.LogItem
+import dji.sdk.keyvalue.value.common.ComponentIndexType
+import kotlin.getValue
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -20,6 +29,8 @@ class CameraViewFragment : Fragment() {
     // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
+
+    private val droneManagerViewModels : DroneManagerViewModel by activityViewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,5 +66,25 @@ class CameraViewFragment : Fragment() {
                     putString(ARG_PARAM2, param2)
                 }
             }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+
+
+        // Find items by id
+        val cameraSurface = view.findViewById<SurfaceView>(R.id.cameraSurfaceView)
+        val droneManagerControl = droneManagerViewModels.droneManager.droneVideoManagerControl
+        val droneConnectionStatus  = droneManagerViewModels.droneConnectionStatus
+
+        // Setup Camera and Add Surface
+        droneManagerControl.setupCamera()
+        droneManagerControl.addSurfaceDisplay(0, cameraSurface)
+
+
+
+
+
     }
 }
