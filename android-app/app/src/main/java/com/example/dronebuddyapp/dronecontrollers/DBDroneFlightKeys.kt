@@ -138,26 +138,31 @@ class DBDroneFlightKeys(private val keyControl : DBDroneKeyControl) {
 //        FAILED	Compass calibration is failed. The user should make sure there are no magnets or metal objects near the aircraft and retry.
           val callback = object: CommonCallbacks.KeyListener<CompassCalibrationState> {
             override fun onValueChange(p0: CompassCalibrationState?, p1: CompassCalibrationState?) {
+                var text = ""
                 if (p1 != null) {
-                    if (p1 == CompassCalibrationState.IDLE) {
-                        _droneCalibrationStatus.value = "IDLE"
-                    }
-                    else if (p1 == CompassCalibrationState.SUCCEEDED) {
-                        _droneCalibrationStatus.value = "CALIBRATED!"
+
+                    if (p1 == CompassCalibrationState.SUCCEEDED || p1 == CompassCalibrationState.IDLE) {
+                        text = "CALIBRATED!"
                     }
                     else if (p1 == CompassCalibrationState.FAILED) {
-                        _droneCalibrationStatus.value = "FAILED! REDO CALIBRATION"
+                        text = "FAILED! REDO CALIBRATION"
                     }
                     else if (p1 == CompassCalibrationState.UNKNOWN) {
-                        _droneCalibrationStatus.value = "UNKNOWN STATE! REDO CALIBRATION"
+                        text = "UNKNOWN STATE! REDO CALIBRATION"
                     }
                     else if (p1 == CompassCalibrationState.HORIZONTAL) {
-                        _droneCalibrationStatus.value = "LIFT 1.5M OFF GROUND, ROTATE HORIZONTALLY 360 DEGREES"
+                        text = "LIFT 1.5M OFF GROUND, ROTATE HORIZONTALLY 360 DEGREES"
                     }
                     else if (p1 == CompassCalibrationState.VERTICAL) {
-                        _droneCalibrationStatus.value = "ROTATE VERTICAL 360 DEGREES"
+                        text = "ROTATE VERTICAL 360 DEGREES"
                     }
                     _droneCalibrationStatusEnum.value = p1
+                    _droneCalibrationStatus.value = text
+                    LogItem.addLog(
+                        "Flight Keys",
+                        text,
+                        LogItem.Status.INFO
+                    )
                 } else {
                     _droneCalibrationStatus.value = "ERROR"
                     LogItem.addLog(

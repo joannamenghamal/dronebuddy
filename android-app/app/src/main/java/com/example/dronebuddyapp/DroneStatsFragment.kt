@@ -10,8 +10,11 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.core.graphics.toColorInt
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import com.example.dronebuddyapp.dronecontrollers.DroneManagerViewModel
 import dji.sdk.keyvalue.value.flightcontroller.CompassCalibrationState
+import kotlin.collections.emptyMap
 import kotlin.getValue
 
 // TODO: Rename parameter arguments, choose names that match
@@ -52,6 +55,12 @@ class DroneStatsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // List of alerts that we will update with alerts
+        val alertTextView = view.findViewById<TextView>(R.id.alertEmptyText)
+        val _alerts = MutableLiveData<Map<String, Alert>>(emptyMap<String, Alert>())
+        val alerts : LiveData<Map<String, Alert>> = _alerts
+        connectAlerts(alertTextView, _alerts, alerts)
+
         // Define TextView Stats
         val tvBatteryStatus = view.findViewById<TextView>(R.id.statBattery)
         val tvSpeedStatus = view.findViewById<TextView>(R.id.statSpeed)
@@ -68,12 +77,45 @@ class DroneStatsFragment : Fragment() {
         connectCompassCalibrationStatus(tvCompassCalibrationStatus)
 
         // Connect Buttons
-        activateCompassCalibrationStatus(btnCompassCalibration, tvCompassCalibrationStatus)
+        activateCompassCalibrationStatus(btnCompassCalibration)
         connectButtonCompassCalibrationStatus(btnCompassCalibration)
     }
 
+    private fun renderAlertText(tv: TextView, alerts: Collection<Alert>) {
+        if (alerts.isEmpty()) {
+            tv.text = "✓ All systems normal"
+            tv.setTextColor(Color.GREEN)
+        } else {
+            tv.text = alerts.joinToString("\n") { "⚠ ${it.message}" }
+            tv.setTextColor("#ff4c40".toColorInt())
+        }
+    }
 
 
+    // Passes the alertList to be edited, and uses the alertLiveData to track
+    private fun connectAlerts(tv: TextView, alertList : MutableLiveData<Map<String, Alert>>, alertLiveData: LiveData<Map<String, Alert>>) {
+        trackCompassCalibration(alertList)
+        alertLiveData.observe(viewLifecycleOwner) {
+            map ->
+            renderAlertText(tv, map.values)
+        }
+    }
+
+    private fun trackCompassCalibration(alertList : MutableLiveData<Map<String, Alert>>) {
+        droneManagerViewModels.droneCompassCalibrationStatusEnum.observe(viewLifecycleOwner) {
+                status ->
+            if (
+                status != CompassCalibrationState.SUCCEEDED && status != CompassCalibrationState.IDLE
+            ) {
+                var currList = alertList.value ?: emptyMap<String, Alert>()
+                alertList.value = currList + ("CompassCalib" to Alert("Compass Uncalibrated! Drone will not fly!", AlertType.CRITICAL))
+            }
+            else {
+                val currList = alertList.value ?: emptyMap<String, Alert>()
+                alertList.value = currList - "CompassCalib"
+            }
+        }
+    }
 
     private enum class AlertType(val colorInt : Int) {
         WARNING("#E9D502".toColorInt()),
@@ -107,25 +149,24 @@ class DroneStatsFragment : Fragment() {
         }
     }
 
-    private fun activateCompassCalibrationStatus(btn: Button, tv: TextView) {
+    private fun activateCompassCalibrationStatus(btn: Button) {
         btn.setOnClickListener {
             val droneFlightKeys = droneManagerViewModels.droneManager.droneFlightKeys
+            val droneFlightKeysEnum = droneManagerViewModels.droneManager.droneFlightKeys.droneCalibrationStatusEnum.value
             // First check to see if currently in calibration mode, by checking if text is succeed or failed
             // We will check the enum since that is consistent
-            droneManagerViewModels.droneCompassCalibrationStatusEnum.observe(viewLifecycleOwner) {
-                status ->
                 if (
-                    status == CompassCalibrationState.IDLE ||
-                    status == CompassCalibrationState.SUCCEEDED ||
-                    status == CompassCalibrationState.FAILED ||
-                    status == CompassCalibrationState.UNKNOWN
+                    droneFlightKeysEnum == CompassCalibrationState.IDLE ||
+                    droneFlightKeysEnum == CompassCalibrationState.SUCCEEDED ||
+                    droneFlightKeysEnum == CompassCalibrationState.FAILED ||
+                    droneFlightKeysEnum == CompassCalibrationState.UNKNOWN
                 ) {
                     droneFlightKeys.activateDroneCompassCalibration()
                 }
                 else {
                     droneFlightKeys.cancelDroneCompassCalibration()
                 }
-            }
+
         }
     }
 

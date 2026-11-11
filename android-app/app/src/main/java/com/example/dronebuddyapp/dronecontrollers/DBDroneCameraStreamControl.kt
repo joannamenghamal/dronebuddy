@@ -44,6 +44,7 @@ class DBDroneCameraStreamControl {
                     LogItem.addLog("CameraView", "No Cameras Found!", LogItem.Status.ERROR)
                 }
                 else {
+                    LogItem.addLog("CameraView", "Surface changed: ${p2}x${p3}", LogItem.Status.INFO)
                     cameraStreamManager.putCameraStreamSurface(
                         availableCameras.get(0), // our dji mini 3 only has one camera
                         surfaceView.holder.surface,
