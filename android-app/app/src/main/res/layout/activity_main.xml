@@ -132,6 +132,18 @@
             android:textAllCaps="false"
             android:textColor="#1565C0" />
 
+        <!-- Push to talk (PushToTalkFragment) -->
+        <Button
+            android:id="@+id/btnPushToTalk"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:backgroundTint="#FFFFFF"
+            android:gravity="start|center_vertical"
+            android:text="Talk"
+            android:textAllCaps="false"
+            android:textColor="#333333" />
+
     </LinearLayout>
 
 </androidx.drawerlayout.widget.DrawerLayout>

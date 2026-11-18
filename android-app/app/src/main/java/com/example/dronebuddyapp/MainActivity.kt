@@ -74,6 +74,8 @@ class MainActivity : AppCompatActivity() {
         btnSetFragment(btnCameraView, CameraViewFragment(), "Camera View")
         btnSetFragment(btnDroneStats, DroneStatsFragment(), "Drone Stats")
         btnSetFragment(btnLog, LogFragment(), "System Logs")
+        val btnPushToTalk = findViewById<Button>(R.id.btnPushToTalk)
+        btnSetFragment(btnPushToTalk, PushToTalkFragment(), "Talk")
     }
 
     private fun showFragmentOnMain(fragment: Fragment, title: String) {
