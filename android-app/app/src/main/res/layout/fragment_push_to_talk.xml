@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Push-to-talk screen: the whole screen is one button; keepScreenOn keeps it awake -->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/push_to_talk_area"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#E3F2FD"
+    android:clickable="true"
+    android:focusable="true"
+    android:keepScreenOn="true"
+    android:contentDescription="Talk to Drone Buddy. Double-tap to start listening, double-tap again to stop."
+    tools:context=".PushToTalkFragment">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:importantForAccessibility="noHideDescendants"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:id="@+id/push_to_talk_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="Hold anywhere to talk"
+            android:textColor="#0D47A1"
+            android:textSize="32sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/push_to_talk_heard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:gravity="center"
+            android:textColor="#333333"
+            android:textSize="18sp" />
+
+    </LinearLayout>
+
+</FrameLayout>

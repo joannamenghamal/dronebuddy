@@ -183,6 +183,21 @@ class DroneManagerViewModel(
         }
     }
 
+    // Push to talk screen (PushToTalkFragment)
+    // Stop the phone talking so the mic hears the user
+    fun stopSpeaking() = speechPlayer.stopSpeaking()
+
+    // Send a voice command to Python; false if the laptop isn't connected
+    fun sendVoiceCommand(command: BridgeMessage.VoiceCommand): Boolean {
+        val sent = bridgeServer.sendVoiceCommand(command)
+        bridgeLog(
+            if (sent) "Voice command sent: ${command.command} ${command.argument ?: ""}".trim()
+            else "Voice command not sent, Python not connected: ${command.command}",
+            if (sent) LogItem.Status.INFO else LogItem.Status.WARNING,
+        )
+        return sent
+    }
+
     override fun onCleared() {
         super.onCleared()
         bridgeServer.shutdownServer()
