@@ -15,7 +15,7 @@
   </marker>
 </defs>
 <text x="30.0" y="40.0" font-size="24" text-anchor="start" fill="#1f2933" font-weight="bold" xml:space="preserve">Phone push-to-talk screen: UI mockup</text>
-<text x="30.0" y="64.0" font-size="13" text-anchor="start" fill="#52606d" xml:space="preserve">Planned for the Android bridge app. Designed for a user who can&#x27;t see the screen: the whole screen is one button.</text>
+<text x="30.0" y="64.0" font-size="13" text-anchor="start" fill="#52606d" xml:space="preserve">For the Android bridge app (in progress). Designed for a user who can&#x27;t see the screen: the whole screen is one button.</text>
 <rect x="60.0" y="100.0" width="300.0" height="600.0" rx="36" fill="#0d1117" stroke="#0d1117" stroke-width="1.4"/>
 <rect x="72.0" y="114.0" width="276.0" height="572.0" rx="26" fill="#11161c" stroke="#11161c" stroke-width="1.4"/>
 <text x="210.0" y="144.0" font-size="12" text-anchor="middle" fill="#f2f4f7" xml:space="preserve">Visual Buddy · connected</text>

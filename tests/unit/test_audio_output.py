@@ -115,6 +115,43 @@ def test_bridge_speech_sends_say_messages_to_the_phone():
     assert sent == [{"type": "say", "text": "Person approaching, ahead", "priority": "URGENT", "pan": 0.25, "volume": 1.0}]
 
 
+def test_bridge_speech_sends_a_tone_as_a_tone_message():
+    sent = []
+    audio = AudioOutput(backend=BridgeSpeech(sent.append))
+    assert audio.tone(pan=-0.6)
+    audio.close()
+
+    assert sent == [{"type": "tone", "pan": -0.6, "volume": 1.0}]
+
+
+def test_a_tone_is_skipped_when_words_are_already_waiting():
+    backend = HeldSpeech()
+    audio = AudioOutput(backend=backend)
+    audio.say("Person approaching, ahead", Priority.URGENT)
+    assert backend.started.wait(timeout=5)
+
+    audio.say("Chair ahead")
+    assert not audio.tone(pan=0.5)  # Newer words are coming anyway
+
+    backend.release.set()
+    audio.close()
+    assert [u.tone for u in backend.spoken] == [False, False]
+
+
+def test_repeat_skips_tones():
+    backend = SilentSpeech()
+    audio = AudioOutput(backend=backend)
+    audio.say("Person approaching, on your left", Priority.URGENT, pan=-0.7)
+    assert wait_until(lambda: len(backend.spoken) == 1)
+    assert audio.tone(pan=-0.7)
+    assert wait_until(lambda: len(backend.spoken) == 2)
+
+    audio.repeat_last()
+    audio.close()
+    assert backend.spoken[-1].text == "Person approaching, on your left"
+    assert not backend.spoken[-1].tone
+
+
 def test_a_failing_backend_does_not_stop_later_alerts():
     class Flaky(SilentSpeech):
         def speak(self, utterance):

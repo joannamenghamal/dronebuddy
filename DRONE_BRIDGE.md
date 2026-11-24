@@ -167,8 +167,22 @@ Something to speak to the user with the phone's text-to-speech. `priority`
 is `NORMAL` or `URGENT`; an `URGENT` one cuts off a `NORMAL` one already
 playing. `pan` is -1.0 (left ear) .. +1.0 (right ear); `volume` is 0.0 ..
 1.0. No ack: a missed sentence is replaced by the next alert. Python side:
-`BridgeSpeech`, sent with `DJIController.send_message`. Both audio messages
+`BridgeSpeech`, sent with `DJIController.send_message`. All the audio messages
 are built and parsed in `app/bridge_messages.py`.
+
+### `tone` (Python -> Android)
+
+```json
+{"type": "tone", "pan": -0.6, "volume": 0.8}
+```
+
+A short warning beep: a person already announced as approaching ("Person
+approaching, on your left") is still coming closer. Sent at most every 2 s,
+for the closest such person, instead of repeating the words; skipped when
+words are waiting to be said, on either side. `pan` and `volume` as in
+`say`. No ack. Python side: `ComputeActions.reminders()` decides,
+`AudioOutput.tone()` queues it, `BridgeSpeech` sends it. The older
+`android-bridge/` app doesn't know this message and ignores it.
 
 ### Video (Android -> Python)
 
@@ -239,11 +253,12 @@ Split between the transport (`BridgeServer`) and the app's DJI layer
   of the hovers above are sent. `app/main.py` stops sending commands after
   asking to land, and hover inputs during DJI's auto-landing or takeoff
   could cancel it.
-- **Audio**: `BridgeServer` hands each valid `say` to its `onSay` callback;
-  `MainActivity` passes them to `SpeechPlayer`, which speaks them with
-  Android text-to-speech, cutting off a `NORMAL` sentence for an `URGENT`
-  one and dropping stale `NORMAL` ones (`SpeechPolicy`). Written but not yet
-  run on a device. Still to build: the push-to-talk screen, which must call
+- **Audio**: `BridgeServer` hands each valid `say` to its `onSay` callback
+  and each `tone` to `onTone`; `DroneManagerViewModel` passes them to
+  `SpeechPlayer`, which speaks them with Android text-to-speech, cutting off
+  a `NORMAL` sentence for an `URGENT` one and dropping stale `NORMAL` ones
+  (`SpeechPolicy`), and plays tones through `TonePlayer` when nothing is
+  being said. Written but not yet run on a device. Still to build: the push-to-talk screen, which must call
   `SpeechPlayer.stopSpeaking()` when pressed and
   `BridgeServer.sendVoiceCommand()` when released. Audio messages never
   affect flight; a failing speech callback is only logged.

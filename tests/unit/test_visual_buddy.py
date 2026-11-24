@@ -122,6 +122,40 @@ class ComputeActionsTests(unittest.TestCase):
         self.assertEqual(approaching[0].priority, Priority.URGENT)
         self.assertGreater(approaching[0].pan, 0.5)
 
+    def test_a_person_still_approaching_gets_a_tone_not_the_words_again(self):
+        clock = FakeClock()
+        tracking = TrackingModule(clock)
+        actions = ComputeActions(tone_interval_s=2.0, clock=clock)
+
+        ## Announced as approaching on the right...
+        confirm(tracking, clock, [person(1, 1100, 200)])
+        frames = [[person(1, 1100, 200 + i * 15)] for i in range(20)]
+        events = run_frames(tracking, clock, frames)
+        self.assertTrue(any(a.text.startswith("Person approaching") for a in actions.compute(events)))
+        self.assertEqual(actions.reminders(tracking.approaching()), [])  # Just told them
+
+        ## ...and still coming 2 s later: one tone from the right, then a 2 s wait again
+        size = 200 + 20 * 15
+        tones = []
+        for i in range(30):  # 3 s at 0.1 s per frame
+            size += 10
+            events = run_frames(tracking, clock, [[person(1, 1100, size)]])
+            self.assertEqual(actions.compute(events), [])  # The words are never repeated
+            tones += actions.reminders(tracking.approaching())
+
+        self.assertEqual(len(tones), 1)
+        self.assertGreater(tones[0], 0.5)
+
+    def test_no_tone_for_someone_never_announced_as_approaching(self):
+        clock = FakeClock()
+        tracking = TrackingModule(clock)
+        actions = ComputeActions(tone_interval_s=2.0, clock=clock)
+
+        ## Standing still: never announced as approaching, so never a tone
+        confirm(tracking, clock, [person(1, 640, 300)])
+        actions.compute(run_frames(tracking, clock, [[person(1, 640, 300)]] * 40))
+        self.assertEqual(actions.reminders(tracking.approaching()), [])
+
 
 ## The user, kept at the bottom-middle of the frame: 160 px wide, so the path runs
 ## one body-width either side of them: x = 400 .. 880

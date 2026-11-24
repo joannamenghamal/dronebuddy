@@ -108,10 +108,12 @@ class TrackingModule:
     def __init__(self, clock=time.monotonic):
         self.clock = clock
         self.tracks = {}  # track_id -> PersonTrack
+        self.frame_time = None  # When the last update() ran
 
     def update(self, people, frame_width, frame_height):
         """people: person Detections for this frame. Returns a list of ActivityEvents."""
         now = self.clock()
+        self.frame_time = now
         events = []
 
         for person in people:
@@ -149,6 +151,17 @@ class TrackingModule:
                 del self.tracks[track_id]
 
         return events
+
+    def approaching(self):
+        """ActivityEvents for every reported person who is still coming toward the user
+        in the last update(), where they are now. Their APPROACHING event was sent
+        when they started; this is for reminding the user while it lasts."""
+        result = []
+        for track_id, track in self.tracks.items():
+            if track.confirmed and track.activity == APPROACHING and track.last_seen() == self.frame_time:
+                horizontal_error, height_ratio = track.latest()
+                result.append(ActivityEvent(track_id, APPROACHING, horizontal_error, height_ratio))
+        return result
 
     def activity_of(self, track_id):
         track = self.tracks.get(track_id)

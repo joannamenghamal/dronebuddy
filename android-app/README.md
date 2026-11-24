@@ -18,7 +18,9 @@ laptop talk to this app over Wi-Fi:
 | `dronecontrollers/DjiFlightActions.kt` | Takeoff and landing |
 | `dronecontrollers/DjiCameraStreamProvider.kt` | Sends the drone's camera to the laptop |
 | `dronecontrollers/DjiTelemetryProvider.kt` | Sends battery, position, heading and speed to the laptop |
-| `audio/SpeechPlayer.kt` | Speaks the laptop's alerts out loud |
+| `audio/SpeechPlayer.kt` | Speaks the laptop's alerts out loud, from the side the person or object is on |
+| `audio/SpeechPolicy.kt` | Decides whether an alert cuts in, waits or is dropped (urgent ones first) |
+| `audio/TonePlayer.kt` | Plays the short warning beep while someone keeps coming closer |
 
 `DroneManagerViewModel` starts all of this when the app opens. When the drone
 connects, it starts the camera and telemetry.

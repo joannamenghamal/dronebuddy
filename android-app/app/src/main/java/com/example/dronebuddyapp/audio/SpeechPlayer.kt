@@ -12,7 +12,8 @@ import java.util.concurrent.atomic.AtomicLong
 /**
  * Speaks Python's `say` messages to the visually impaired user with Android's
  * text-to-speech: URGENT alerts cut in (see SpeechPolicy), `pan` places the voice in
- * the left or right ear, `volume` follows LOUDER / QUIETER.
+ * the left or right ear, `volume` follows LOUDER / QUIETER. Python's `tone` messages
+ * (someone still approaching) play through TonePlayer, only when nothing is being said.
  *
  * The engine starts asynchronously; the first few messages that arrive before it's
  * ready (e.g. "Visual Buddy ready") are held and spoken once it is.
@@ -28,6 +29,7 @@ class SpeechPlayer(
     }
 
     private val policy = SpeechPolicy()
+    private val tonePlayer = TonePlayer()
     private val nextId = AtomicLong()
     private val heldBeforeReady = ArrayDeque<BridgeMessage.Say>()  // guarded by itself
     @Volatile private var ready = false
@@ -79,6 +81,15 @@ class SpeechPlayer(
     }
 
     /**
+     * Plays a `tone` from the person's side - unless words are playing or waiting,
+     * since those are newer than the reminder. Safe to call from any thread.
+     */
+    fun tone(tone: BridgeMessage.Tone) {
+        if (!ready || policy.pendingCount() > 0) return
+        tonePlayer.play(tone.pan, tone.volume)
+    }
+
+    /**
      * Stops speaking at once. The push-to-talk screen calls this when it's pressed,
      * so the microphone hears the user and not the last alert.
      */
@@ -88,6 +99,7 @@ class SpeechPlayer(
     }
 
     fun shutdown() {
+        tonePlayer.shutdown()
         tts.stop()
         tts.shutdown()
     }

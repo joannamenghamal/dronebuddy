@@ -49,6 +49,9 @@ sealed class BridgeMessage {
         val volume: Float,
     ) : BridgeMessage()
 
+    /** Python -> Android: a short warning tone - the person just announced is still coming closer. */
+    data class Tone(val pan: Float, val volume: Float) : BridgeMessage()
+
     /** Android -> Python: what the user said on the push-to-talk screen, as a command. */
     data class VoiceCommand(
         val command: String,
@@ -142,6 +145,14 @@ object ProtocolCodec {
             pan = pan.coerceIn(-1.0, 1.0).toFloat(),
             volume = volume.coerceIn(0.0, 1.0).toFloat(),
         )
+    }
+
+    /** Like `say`: out-of-range pan and volume are clamped, a non-number drops the tone. */
+    fun decodeTone(json: JSONObject): BridgeMessage.Tone? {
+        val pan = json.optDouble("pan", 0.0)
+        val volume = json.optDouble("volume", 1.0)
+        if (listOf(pan, volume).any { it.isNaN() || it.isInfinite() }) return null
+        return BridgeMessage.Tone(pan.coerceIn(-1.0, 1.0).toFloat(), volume.coerceIn(0.0, 1.0).toFloat())
     }
 
     /** Null for a command Python wouldn't understand, so it's never sent. */

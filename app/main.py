@@ -136,6 +136,12 @@ def run(platform: str, source=None, muted=False, voice_script=None):
                 session_log.log("person_alert", message=alert.text, priority=alert.priority.name)
                 audio.say(alert.text, alert.priority, alert.pan)
 
+            ## Someone already announced as approaching is still coming: a short tone
+            ## from their side every few seconds, instead of repeating the words
+            for pan in actions.reminders(tracking.approaching()):
+                if audio.tone(pan):
+                    session_log.log("warning_tone", pan=round(pan, 2))
+
             ## Object Locator -> Audio Output: objects in the user's path ("chair ahead on your left")
             for label, position, message, pan in locator.locate(detections, user, frame_width, frame_height):
                 session_log.log("object_alert", label=label, position=position)

@@ -95,13 +95,16 @@ CLASSES = {
         "- tracks: dict[int, PersonTrack]",
     ], [
         "+ update(people, w, h): list[ActivityEvent]",
+        "+ approaching(): list[ActivityEvent]",
         "+ activity_of(track_id): str",
     ]),
     "actions": (None, "ComputeActions", HEADER_AUDIO, [
         "- cooldown_s = 5.0",
         "- message_cooldown_s = 2.0",
+        "- tone_interval_s = 2.0",
     ], [
         "+ compute(events): list[Alert]",
+        "+ reminders(approaching): list[pan]",
     ]),
     "locator": (None, "ObjectLocator", HEADER_AUDIO, [
         "- cooldown_s = 10.0",
@@ -118,6 +121,7 @@ CLASSES = {
         "- last_spoken: str",
     ], [
         "+ say(text, priority, pan, repeatable)",
+        "+ tone(pan): bool",
         "+ repeat_last(): bool",
         "+ change_volume(step): float",
         "+ close()",
@@ -164,6 +168,7 @@ CLASSES = {
         "+ pan: float",
         "+ volume: float",
         "+ repeatable: bool",
+        "+ tone: bool",
     ], []),
     "command": ("dataclass", "VoiceCommand", HEADER_DATA, [
         "+ type: CommandType",
@@ -176,6 +181,7 @@ CLASSES = {
     ], []),
     "bridge": ("module", "bridge_messages", HEADER_VOICE, [], [
         "+ say_message(text, priority, pan, volume): dict",
+        "+ tone_message(pan, volume): dict",
         "+ parse_voice_command(message): VoiceCommand",
         "Sent / received through DJIController",
     ]),
@@ -412,8 +418,8 @@ def sequence_diagram():
 
     note_y = bottom + 20
     parts.append(rect(20, note_y, width - 40, 50, fill="#fff7ed", stroke=PLANNED, rx=6, dashed=True))
-    parts.append(text(36, note_y + 21, "Python's side of both bridge messages is built. Until the phone app handles them, test with --drone mock:", size=12.5))
-    parts.append(text(36, note_y + 39, "--voice-script stands in for the phone's voice_command, and the laptop speaks the answer.", size=12.5))
+    parts.append(text(36, note_y + 21, "Built: Python's side of both messages, and the phone speaking say (SpeechPlayer). Still to build: the push-to-talk screen.", size=12.5))
+    parts.append(text(36, note_y + 39, "Until then, test with --drone mock: --voice-script stands in for voice_command, and the laptop speaks the answer.", size=12.5))
     height = note_y + 70
     svg = svg_document(width, height, parts)
     save(UML_DIR, "audio_sequence_where_is.svg", svg, width, height)
@@ -499,7 +505,7 @@ def activity_diagram():
                        (loop_x, ys["wait"] - 30), (pc + 40, ys["wait"] - 30), (pc + 40, ys["wait"] - bh / 2)]))
     parts.append(text(loop_x - 8, ys["speak"] - bh / 2 - 14, "back to waiting", anchor="end", size=11.5, style="italic", fill=MUTED))
 
-    parts.append(text(20, height - 4, "Orange: the bridge messages. The phone app's side is not built yet; until then --voice-script and the laptop speaker stand in.", size=11.5, fill=PLANNED))
+    parts.append(text(20, height - 4, "Orange: the bridge messages. The phone speaks the answers; the push-to-talk screen is still to build, so --voice-script stands in for it.", size=11.5, fill=PLANNED))
     svg = svg_document(width, height + 10, parts)
     save(UML_DIR, "audio_activity_push_to_talk.svg", svg, width, height + 10)
 
@@ -510,7 +516,7 @@ def mockup():
     pw, ph = 300, 600
     width, height = 1240, 760
     parts = [text(30, 40, "Phone push-to-talk screen: UI mockup", size=24, weight="bold"),
-             text(30, 64, "Planned for the Android bridge app. Designed for a user who can't see the screen: the whole screen is one button.", size=13, fill=MUTED)]
+             text(30, 64, "For the Android bridge app (in progress). Designed for a user who can't see the screen: the whole screen is one button.", size=13, fill=MUTED)]
 
     def phone(x, y, bg, fg, title, line1, line2, caption, rings):
         out = [rect(x, y, pw, ph, fill="#0d1117", stroke="#0d1117", rx=36),

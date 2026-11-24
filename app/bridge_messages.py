@@ -1,14 +1,18 @@
-"""The two Visual Buddy audio messages on the bridge WebSocket, kept in this one file so
+"""The Visual Buddy audio messages on the bridge WebSocket, kept in this one file so
 the format can change in one place.
 
     phone -> Python:  {"type": "voice_command", "command": "WHERE_IS", "argument": "cup",
                        "heard": "where is my mug", "confidence": 0.82}
     Python -> phone:  {"type": "say", "text": "Chair ahead", "priority": "URGENT",
                        "pan": -0.6, "volume": 0.8}
+    Python -> phone:  {"type": "tone", "pan": -0.6, "volume": 0.8}
+                      (a short beep: the person just announced is still coming closer)
 
-Documented in DRONE_BRIDGE.md. Python side: BridgeSpeech sends "say" with
+Documented in DRONE_BRIDGE.md. Python side: BridgeSpeech sends "say" and "tone" with
 DJIController.send_message; MicInput receives "voice_command" through
-DJIController.add_message_handler. The Android app's side is not built yet."""
+DJIController.add_message_handler. Android side: android-app's BridgeServer hands
+"say" to SpeechPlayer and "tone" to TonePlayer; BridgeServer.sendVoiceCommand is
+there for the push-to-talk screen, which is not built yet."""
 
 from typing import Optional
 
@@ -16,6 +20,7 @@ from app.voice_commands import CommandType, VoiceCommand
 
 VOICE_COMMAND_TYPE = "voice_command"
 SAY_TYPE = "say"
+TONE_TYPE = "tone"
 
 
 def say_message(text, priority, pan=0.0, volume=1.0) -> dict:
@@ -25,6 +30,16 @@ def say_message(text, priority, pan=0.0, volume=1.0) -> dict:
         "type": SAY_TYPE,
         "text": text,
         "priority": priority.name,
+        "pan": round(max(-1.0, min(1.0, pan)), 2),
+        "volume": round(max(0.0, min(1.0, volume)), 2),
+    }
+
+
+def tone_message(pan=0.0, volume=1.0) -> dict:
+    """Python -> phone: play the short warning tone, from pan -1.0 (left ear) ..
+    +1.0 (right ear), at volume 0.0 .. 1.0."""
+    return {
+        "type": TONE_TYPE,
         "pan": round(max(-1.0, min(1.0, pan)), 2),
         "volume": round(max(0.0, min(1.0, volume)), 2),
     }

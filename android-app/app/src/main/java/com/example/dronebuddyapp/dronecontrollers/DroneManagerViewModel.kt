@@ -102,6 +102,7 @@ class DroneManagerViewModel(
         port = BRIDGE_PORT,
         handler = bridgeHandler,
         onSay = speechPlayer::speak,
+        onTone = speechPlayer::tone,
         onListening = { bridgeLog("Bridge running, waiting for Python on port $BRIDGE_PORT", LogItem.Status.INFO) },
         onServerError = { e -> bridgeLog("Bridge failed to start: ${e.message}", LogItem.Status.ERROR) },
     )

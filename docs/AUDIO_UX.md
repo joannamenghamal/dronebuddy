@@ -24,6 +24,7 @@ left of the frame is their left). In the user's path, objects are **ahead**,
 | Session starts | "Visual Buddy ready" | NORMAL | once | center |
 | A person comes into view | "Person {side}" | NORMAL | 5 s per person; same words 2 s | their side |
 | A person comes toward the user | "Person approaching, {side}" | **URGENT** | 5 s per person; same words 2 s | their side |
+| …and keeps coming closer | a short beep (no words) | NORMAL | every 2 s, closest person only; skipped while words are waiting | their side, as they move |
 | A person leaves the view | "Person out of view" | NORMAL | 5 s per person; same words 2 s | their last side |
 | An object is in the user's path | "{object} ahead" / "… ahead on your left / right" | NORMAL | 10 s per kind of object | its side |
 | Emergency stop (space bar) | "Emergency stop" | **URGENT** | once | center |
@@ -70,16 +71,30 @@ only in the path, and the answer comes from that object's side.
   (`logs/session_*.jsonl`: `person_alert`, `object_alert`, `voice_command`,
   `voice_answer`).
 
+## Warning tones
+
+Words about the same person aren't repeated within 5 s, and the tracker only
+reports when someone *starts* approaching. So if they keep coming closer, the
+user would hear nothing more. Instead, every 2 s while they're still
+approaching, a short beep plays from their side: high (880 Hz) and short
+(150 ms), so it can't be mistaken for speech and doesn't talk over it. Only
+the closest approaching person gets one, and it's skipped when words are
+already waiting. Logged as `warning_tone`. On the laptop (`--drone mock`)
+it's a mono beep (Windows) or the terminal bell; on the phone it's
+`android-app/.../audio/TonePlayer.kt`, in stereo.
+
 ## Not built yet
 
 The Python side is connected: on `--drone dji` alerts go to the phone as
-`say` messages and commands come from it as `voice_command` messages (see
-`DRONE_BRIDGE.md`). On the phone, speaking is written
-(`android-bridge/.../audio/SpeechPlayer.kt`: text-to-speech, URGENT cuts in,
-stereo from `pan`) but not yet run on a device. Still missing:
+`say` and `tone` messages and commands come from it as `voice_command`
+messages (see `DRONE_BRIDGE.md`). On the phone
+(`android-app/.../audio/`), speaking and tones are written (text-to-speech,
+URGENT cuts in, stereo from `pan`) but not yet run on a device. Still
+missing:
 
-- The push-to-talk screen and speech recognition that send `voice_command`.
-- Tones for repeated warnings.
+- The push-to-talk screen and speech recognition that send `voice_command`
+  (`BridgeServer.sendVoiceCommand()` and `SpeechPlayer.stopSpeaking()` are
+  ready for it).
 
 Until then, test with `--drone mock`: the laptop speaks, in mono, and
 `--voice-script` stands in for the user's commands.

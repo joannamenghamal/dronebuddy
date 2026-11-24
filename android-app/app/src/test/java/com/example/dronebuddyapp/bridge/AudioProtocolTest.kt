@@ -41,6 +41,19 @@ class AudioProtocolTest {
     }
 
     @Test
+    fun decodesAToneFromPython() {
+        val tone = ProtocolCodec.decodeTone(JSONObject("""{"type": "tone", "pan": -0.6, "volume": 0.8}"""))
+
+        assertEquals(BridgeMessage.Tone(-0.6f, 0.8f), tone)
+    }
+
+    @Test
+    fun toneOutOfRangeIsClampedAndMissingFieldsGetDefaults() {
+        assertEquals(BridgeMessage.Tone(1f, 0f), ProtocolCodec.decodeTone(JSONObject("""{"type": "tone", "pan": 4, "volume": -1}""")))
+        assertEquals(BridgeMessage.Tone(0f, 1f), ProtocolCodec.decodeTone(JSONObject("""{"type": "tone"}""")))
+    }
+
+    @Test
     fun encodesAVoiceCommandForPython() {
         val encoded = ProtocolCodec.encodeVoiceCommand(
             BridgeMessage.VoiceCommand("WHERE_IS", "cup", "where is my mug", 0.82)

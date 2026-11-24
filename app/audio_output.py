@@ -3,13 +3,15 @@ import threading
 from dataclasses import dataclass
 from enum import IntEnum
 
-from app.bridge_messages import say_message
+from app.bridge_messages import say_message, tone_message
 
 logger = logging.getLogger("dronebuddy.audio")
 
 MAX_PENDING = 3       # Old alerts are dropped if speech falls behind - stale cues are worse than none
 VOLUME_STEP = 0.2     # LOUDER / QUIETER change the volume by this much
 MIN_VOLUME = 0.2      # Never so quiet the user can't hear the next warning
+TONE_HZ = 880         # The warning tone on the laptop: short and high, unlike any word
+TONE_MS = 150
 
 
 class Priority(IntEnum):
@@ -24,6 +26,7 @@ class Utterance:
     pan: float = 0.0     # -1.0 = left ear .. +1.0 = right ear
     volume: float = 1.0  # 0.0 .. 1.0
     repeatable: bool = True  # False for confirmations ("Louder"), so REPEAT skips them
+    tone: bool = False       # A short warning tone instead of words (text is only for the log)
 
 
 ## ---- Speech backends: where the words actually come out ----
@@ -48,10 +51,23 @@ class LocalSpeech:
                 logger.warning("text-to-speech unavailable (%s), logging alerts only", error)
                 self.unavailable = True
 
+        if utterance.tone:
+            play_beep()
+            return
+
         if self.engine is not None:
             self.engine.setProperty("volume", utterance.volume)
             self.engine.say(utterance.text)
             self.engine.runAndWait()
+
+
+def play_beep():
+    """The warning tone on the laptop speakers (Windows; elsewhere the terminal bell)."""
+    try:
+        import winsound
+        winsound.Beep(TONE_HZ, TONE_MS)
+    except (ImportError, RuntimeError):
+        print("\a", end="", flush=True)
 
 
 class SilentSpeech:
@@ -66,14 +82,17 @@ class SilentSpeech:
 
 class BridgeSpeech:
     """The user's phone speaks: each utterance is sent over the bridge as a "say"
-    message, and the phone handles stereo, tones and cutting off a sentence for an
-    urgent one. send is the bridge connection's send-a-message function."""
+    message (a tone as a "tone" message), and the phone handles stereo and cutting off
+    a sentence for an urgent one. send is the bridge connection's send-a-message function."""
 
     def __init__(self, send):
         self.send = send
 
     def speak(self, utterance: Utterance) -> None:
-        self.send(say_message(utterance.text, utterance.priority, utterance.pan, utterance.volume))
+        if utterance.tone:
+            self.send(tone_message(utterance.pan, utterance.volume))
+        else:
+            self.send(say_message(utterance.text, utterance.priority, utterance.pan, utterance.volume))
 
 
 class AudioOutput:
@@ -112,6 +131,19 @@ class AudioOutput:
 
             self.condition.notify()
 
+    def tone(self, pan=0.0) -> bool:
+        """A short warning tone from pan's side: "the person I just warned you about is
+        still coming". Skipped (False) if anything is already waiting to be said, since
+        the words that are coming are newer than the reminder."""
+        utterance = Utterance("(tone)", Priority.NORMAL, max(-1.0, min(1.0, pan)), self.volume,
+                              repeatable=False, tone=True)
+        with self.condition:
+            if self.pending:
+                return False
+            self.pending.append(utterance)
+            self.condition.notify()
+        return True
+
     def repeat_last(self) -> bool:
         """Says the last alert or answer again (REPEAT), skipping confirmations like
         "Louder". False if there is nothing to repeat yet."""
@@ -141,7 +173,10 @@ class AudioOutput:
                     break
                 utterance = self.pending.pop(0)
 
-            logger.info("say %r (%s, pan %+.1f)", utterance.text, utterance.priority.name, utterance.pan)
+            if utterance.tone:
+                logger.info("tone (pan %+.1f)", utterance.pan)
+            else:
+                logger.info("say %r (%s, pan %+.1f)", utterance.text, utterance.priority.name, utterance.pan)
             if utterance.repeatable:
                 self.last_spoken = utterance.text
                 self.last_pan = utterance.pan

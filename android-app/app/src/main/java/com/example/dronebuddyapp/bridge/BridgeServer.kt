@@ -31,7 +31,7 @@ import kotlin.concurrent.thread
  * flight_command is validated by ProtocolCodec before it is handed on, so
  * malformed input never reaches the app.
  *
- * Audio (`say` in, `voice_command` out) is passed through to the app and never
+ * Audio (`say` and `tone` in, `voice_command` out) is passed through to the app and never
  * touches flight: a failing speech callback is logged and nothing else changes.
  */
 class BridgeServer(
@@ -39,6 +39,7 @@ class BridgeServer(
     private val handler: Handler,
     private val connectionLossTimeoutMs: Long = 3000L,
     private val onSay: (BridgeMessage.Say) -> Unit = {},
+    private val onTone: (BridgeMessage.Tone) -> Unit = {},
     /** The server is bound to its port and accepting the laptop's connection. */
     private val onListening: () -> Unit = {},
     /** The server itself failed, e.g. it couldn't bind its port, so nothing can connect. */
@@ -119,6 +120,7 @@ class BridgeServer(
                 sendQuietly(conn, ProtocolCodec.encodeAck(BridgeMessage.Ack("land", ok, detail)))
             }
             "say" -> handleSay(json)
+            "tone" -> handleTone(json)
             else -> Log.w(TAG, "unknown message type, ignoring")
         }
     }
@@ -149,6 +151,20 @@ class BridgeServer(
             onSay(say)
         } catch (e: Exception) {
             Log.e(TAG, "speaking failed", e)
+        }
+    }
+
+    /** No ack either: a missed tone is replaced by the next one 2 s later. */
+    private fun handleTone(json: JSONObject) {
+        val tone = ProtocolCodec.decodeTone(json)
+        if (tone == null) {
+            Log.w(TAG, "malformed tone, ignoring")
+            return
+        }
+        try {
+            onTone(tone)
+        } catch (e: Exception) {
+            Log.e(TAG, "playing a tone failed", e)
         }
     }
 
